@@ -2,7 +2,7 @@
 
 var noOp = function(){};
 
-// Delegation based...
+// Wrapper...
 // a catch all method would be nice here
 var JSProxy = function(target, handler){
     
@@ -18,30 +18,22 @@ var JSProxy = function(target, handler){
             this[slot] = function(){
                 
                 var args = Array.prototype.slice.call(arguments);
-                //console.log('Args:', args);
-
                 return handler[slot](target[slot], args, target);
             }; 
             
         }else{
             //TODO fields etc. ignored
-
         }
     }
 };
 
-// Inheritance based ...
+// Delegation based ...
 // prefered because if we do not instrument a certain function call
-// the original wil be looked up in the inheritance chain
+// the original will be looked up by following the chain of parent objects
 var makeJSProxy = function(target, handler){
-    var self = this;
     var p = Object.create(target); //prototype of p is target
 
-    
-
     var slot;
-
-
     for (slot in target) {
 
         if(typeof target[slot] === 'function'){
@@ -69,19 +61,21 @@ var makeJSProxy = function(target, handler){
             }
                 
         }else{
-            //console.log(target[slot], slot)
+            console.log('ignored', target[slot], slot)
             //TODO fields etc. ignored
             
         }
 
     }
 
-    //dynamic proto lookup
+    //dynamic proto lookup, to avoid:
+    //  problem this.a goes up in the chain to find it 
+    //  but this.a--; => this.a = this.a -1; does not go up in the chain
+    //  it just sets the immediate parent
     p._getProto = function(){
         var proto = Object.getPrototypeOf(this); //!
-
+    
         if(!proto._getProto){
-            
             return proto;
         }
 
@@ -94,7 +88,7 @@ var makeJSProxy = function(target, handler){
 
 /////////////////////////////////////////////////////
 //Original functionality
-var RPC = function(){
+/*var RPC = function(){
     this.a = 42;
 
     this.func = function(){ 
@@ -108,19 +102,13 @@ RPC.prototype.rpcCall = function(func, argArr, cb, due){
     this.a++;
     return this.a;
 };
-RPC.prototype.unInstFunc = function(){ return this.a;}
+RPC.prototype.unInstFunc = function(){ return this.a;};*/
 
-
-
-/*var a = new JSProxy(c, function(originalCall, args){
-            console.log('Instrumented', args);
-            return originalCall.apply(this, args);
-        });*/
 
 
 ////////////////////////////////////////////////////
 
-var LOGProxy = function(target){
+/*var LOGProxy = function(target){
     return new JSProxy(target, LOGProxy.handler);           
 };
 
@@ -142,10 +130,10 @@ IGNOREProxy.handler = {
             console.log('suppressed', args);
             context.a =100;
         } 
-    };
+    };*/
 
 ////////////////////////////////////////////////////
-var c = new RPC();
+/*var c = new RPC();
 
 var d = new IGNOREProxy(c);
 var e = new LOGProxy(c);
@@ -153,21 +141,16 @@ var f = new LOGProxy(c);
 var ff = new LOGProxy(f);
 
 var y = makeJSProxy(c, LOGProxy.handler);
-var yy = makeJSProxy(y, LOGProxy.handler);
+var yy = makeJSProxy(y, LOGProxy.handler);*/
 
-if (typeof module !== 'undefined' && module.exports){
-    exports.JSProxy = JSProxy;
-    exports.makeJSProxy = makeJSProxy;
-    //exports.LOGProxy = LOGProxy;
-    //exports.IGNOREProxy = IGNOREProxy;
-}
+
 ////////////////////////////////////////////////////
 
 // for state
 /*var makeIncFieldProxy = function(target, handler){
     var state =1;
     return makeJSProxy(target, {
-        protoFuncNormal: function(originalCall, args, context){
+        rpcCall: function(originalCall, args, context){
             state++;
             console.log('state', state)
             context.a++;
@@ -177,59 +160,12 @@ if (typeof module !== 'undefined' && module.exports){
     });
 };*/
 //
-var IncFieldProxy = function(target){
-    return new JSProxy(target, IncFieldProxy.handler);           
-};
-
-
-IncFieldProxy.handler = {
-        protoFuncNormal: function(originalCall, args, context, subject){
-
-            console.log(subject.a, subject)
-            subject.a++;
-            console.log(subject.a, subject)
-            console.log('INCREMENT')
-            return originalCall.apply(context, args);
-        }
-    };
-
-//
-var DecFieldProxy = function(target){
-    return new JSProxy(target, DecFieldProxy.handler);           
-};
-
-DecFieldProxy.handler = {
-        protoFuncNormal: function(originalCall, args, context, subject){
-             console.log(subject.a, subject)
-            subject.a--;
-             console.log(subject.a, subject)
-             console.log('DECREMENT')
-            return originalCall.apply(context, args);
-        }
-    };    
 
 
 ////////////////////////////////////////////////////
 
-var Subject = function(){
-this.a = 42;
-this.func = function(){ 
-    console.log('CALLING', this.a)
-    return this.a++;};
-};
 
-Subject.prototype.protoFuncNormal = function(){
-    return this.a;
-};
-
-
-var subject = new Subject();
-                var incFieldProxy = makeJSProxy(subject, IncFieldProxy.handler);
-                var decFieldProxy = makeJSProxy(incFieldProxy, DecFieldProxy.handler);
-                var finalProxy = makeJSProxy(decFieldProxy, IncFieldProxy.handler);
-
-                //should be 42
-                //decFieldProxy.protoFuncNormal();
-
-//problem this.a goes up in the inheritance chain to find it 
-//while this.a-- => this.a = this.a -1; does not go up in the chain
+if (typeof module !== 'undefined' && module.exports){
+    exports.JSProxy = JSProxy;
+    exports.makeJSProxy = makeJSProxy;
+}

@@ -255,6 +255,8 @@ describe('proxy.js tests', function() {
                 expect(incFieldProxy.protoFuncNormal()).to.equal(42); //42 = 42 -1 +1
                 expect(incFieldProxy.a).to.equal(42);
 
+                expect(subject.a).to.equal(42); //original should be changed
+
                 done();
             });
 
@@ -267,6 +269,8 @@ describe('proxy.js tests', function() {
                 expect(decFieldProxy.a).to.equal(42);
                 expect(decFieldProxy.protoFuncNormal()).to.equal(42); //42 = 42 +1 -1
                 expect(decFieldProxy.a).to.equal(42);
+
+                expect(subject.a).to.equal(42); //original should be changed
 
                 done();
             });
@@ -282,6 +286,8 @@ describe('proxy.js tests', function() {
                 expect(incFieldProxy3.protoFuncNormal()).to.equal(45); //45 = 42 +1 +1 +1
                 expect(incFieldProxy3.a).to.equal(45);
 
+                expect(subject.a).to.equal(45); //original should be changed
+
                 done();
             });
 
@@ -296,6 +302,8 @@ describe('proxy.js tests', function() {
                 expect(incFieldProxy2.protoFuncNormal()).to.equal(43); //43 = 42 +1 -1 +1
                 expect(incFieldProxy2.a).to.equal(43);
 
+                expect(subject.a).to.equal(43); //original should be changed
+                
                 done();
             });
         });       
