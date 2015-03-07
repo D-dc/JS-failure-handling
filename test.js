@@ -7,7 +7,6 @@ var Proxy = require('./code.js'),
 var Subject = function(){
     this.a = 42;
     this.func = function(){ 
-        console.log('CALLING', this.a)
         return this.a++;};
 };
 
@@ -24,72 +23,70 @@ Subject.prototype.unInstFunc = function(){ return this.a;};
 
 //////////////////////////////////////////////////////////////////
 
-//A proxy that does nothing, just delegates the call.
-var NoOpProxy = function(target){
-    return new Proxy.JSProxy(target, DeactivateProxy.handler);           
-};    
 
-NoOpProxy.handler = {
+//PROXY 1: A proxy that does nothing, just delegates the call.
+var makeNoOpProxy = function(target){
+    return Proxy.makeJSProxy(target, {
         protoFunc: function(originalCall, args, context){
             return originalCall.apply(context, args);
         }
-    };
+    });           
+};    
+ 
 
-//////////////////////////////////////////////////////////////////    
-
-//A proxy that drops the operation and not executes the call.
-var DropOpProxy = function(target){
-    return new Proxy.JSProxy(target, DropOpProxy.handler);           
-};
-
-
-DropOpProxy.handler = {
+//PROXY 2: A proxy that drops the operation and not executes the call.
+var makeDropOpProxy = function(target){
+    return Proxy.makeJSProxy(target, {
         protoFunc: function(originalCall, args, context){
             return context.a;// we bypass the call and just return the unincremented number
         }
-    };
-
-//////////////////////////////////////////////////////////////////
-
-//
-var IncFieldProxy = function(target){
-    return new Proxy.JSProxy(target, IncFieldProxy.handler);           
+    });           
 };
 
 
-IncFieldProxy.handler = {
+//PROXY 3: A proxy that increments a field in the subject.
+var makeIncFieldProxy = function(target){
+    return Proxy.makeJSProxy(target, {
         protoFuncNormal: function(originalCall, args, context, subject){
             subject.a++;
             return originalCall.apply(context, args);
         }
-    };
-
-//
-var DecFieldProxy = function(target){
-    return new Proxy.JSProxy(target, DecFieldProxy.handler);           
+    });           
 };
 
 
-DecFieldProxy.handler = {
+//PROXY 4: A proxy that decrements a field in the subject.
+var makeDecFieldProxy = function(target){
+    return new Proxy.makeJSProxy(target, {
         protoFuncNormal: function(originalCall, args, context, subject){
-             //console.log(context.a)
             subject.a--;
-            // console.log(context.a)
             return originalCall.apply(context, args);
         }
-    };    
+    });           
+};
 
-//////////////////////////////////////////////////////////////////
+
+//PROXY 5: A proxy that counts the invocations of a method.
+var makeInvocCounterProxy = function(target){
+    var counter = 0;
+    return Proxy.makeJSProxy(target, {
+        protoFunc: function(originalCall, args, context, subject){
+            counter++;
+            originalCall.apply(context, args);
+            return counter; //todo
+        }
+    });           
+};
 
 
 //////////////////////////////////////////////////////////////////
 
 describe('proxy.js tests', function() {
-    describe('Inheritance Proxy', function() {
+    describe('Delegation Proxy', function() {
         describe('Single', function() {
             it('noOpProxy', function(done) {
                 var subject = new Subject();
-                var noOpProxy = Proxy.makeJSProxy(subject, NoOpProxy.handler);
+                var noOpProxy = makeNoOpProxy(subject);
                 
                 expect(subject.a).to.equal(42);
                 expect(subject.func()).to.equal(42);
@@ -114,13 +111,13 @@ describe('proxy.js tests', function() {
                 expect(noOpProxy.a).to.equal(46);
 
                 // a = 46
-
+                expect(subject.a).to.equal(46);
                 done();
             }); 
             
             it('dropOpProxy', function(done) {
                 var subject = new Subject();
-                var dropOpProxy = Proxy.makeJSProxy(subject, DropOpProxy.handler);
+                var dropOpProxy = makeDropOpProxy(subject);
                 
                 expect(subject.a).to.equal(42);
                 expect(subject.func()).to.equal(42);
@@ -145,7 +142,7 @@ describe('proxy.js tests', function() {
                 expect(dropOpProxy.a).to.equal(45);
 
                 // a = 45
-
+                expect(subject.a).to.equal(45);
                 done();
             });
         });     
@@ -153,8 +150,8 @@ describe('proxy.js tests', function() {
         describe('Double', function() {
             it('noOpProxy', function(done) {
                 var subject = new Subject();
-                var noOpProxy1 = Proxy.makeJSProxy(subject, NoOpProxy.handler);
-                var noOpProxy2 = Proxy.makeJSProxy(noOpProxy1, NoOpProxy.handler);
+                var noOpProxy1 = makeNoOpProxy(subject);
+                var noOpProxy2 = makeNoOpProxy(noOpProxy1);
                 
                 expect(subject.a).to.equal(42);
                 expect(subject.func()).to.equal(42);
@@ -179,14 +176,14 @@ describe('proxy.js tests', function() {
                 expect(noOpProxy2.a).to.equal(46);
 
                 // a = 46
-
+                expect(subject.a).to.equal(46);
                 done();
             });
 
             it('dropOpProxy', function(done) {
                 var subject = new Subject();
-                var dropOpProxy1 = Proxy.makeJSProxy(subject, DropOpProxy.handler);
-                var dropOpProxy2 = Proxy.makeJSProxy(dropOpProxy1, DropOpProxy.handler);
+                var dropOpProxy1 = makeDropOpProxy(subject);
+                var dropOpProxy2 = makeDropOpProxy(dropOpProxy1);
                 
                 expect(subject.a).to.equal(42);
                 expect(subject.func()).to.equal(42);
@@ -211,7 +208,7 @@ describe('proxy.js tests', function() {
                 expect(dropOpProxy2.a).to.equal(45);
 
                 // a = 45
-
+                expect(subject.a).to.equal(45);
                 done();
             });   
         }); 
@@ -219,7 +216,7 @@ describe('proxy.js tests', function() {
         describe('Chaining', function() {
             it('IncFieldProxy', function(done) {
                 var subject = new Subject();
-                var incFieldProxy = Proxy.makeJSProxy(subject, IncFieldProxy.handler);
+                var incFieldProxy = makeIncFieldProxy(subject);
                 
                 expect(incFieldProxy.a).to.equal(42);
                 expect(incFieldProxy.func()).to.equal(42);
@@ -228,12 +225,13 @@ describe('proxy.js tests', function() {
                 expect(incFieldProxy.protoFuncNormal()).to.equal(44);
                 expect(incFieldProxy.a).to.equal(44);
 
+                expect(subject.a).to.equal(44);
                 done();
             }); 
 
             it('DecFieldProxy', function(done) {
                 var subject = new Subject();
-                var decFieldProxy = Proxy.makeJSProxy(subject, DecFieldProxy.handler);
+                var decFieldProxy = makeDecFieldProxy(subject);
                 
                 expect(decFieldProxy.a).to.equal(42);
                 expect(decFieldProxy.func()).to.equal(42);
@@ -242,44 +240,41 @@ describe('proxy.js tests', function() {
                 expect(decFieldProxy.protoFuncNormal()).to.equal(42);
                 expect(decFieldProxy.a).to.equal(42);
 
+                expect(subject.a).to.equal(42);
                 done();
             });
 
             it('DecFieldProxy before IncFieldProxy', function(done) {
                 var subject = new Subject();
-                var decFieldProxy = Proxy.makeJSProxy(subject, DecFieldProxy.handler);
-                var incFieldProxy = Proxy.makeJSProxy(decFieldProxy, IncFieldProxy.handler);
+                var decFieldProxy = makeDecFieldProxy(subject);
+                var incFieldProxy = makeIncFieldProxy(decFieldProxy);
                 
-
                 expect(incFieldProxy.a).to.equal(42);
                 expect(incFieldProxy.protoFuncNormal()).to.equal(42); //42 = 42 -1 +1
                 expect(incFieldProxy.a).to.equal(42);
 
                 expect(subject.a).to.equal(42); //original should be changed
-
                 done();
             });
 
             it('IncFieldProxy before DecFieldProxy', function(done) {
                 var subject = new Subject();
-                var incFieldProxy = Proxy.makeJSProxy(subject, IncFieldProxy.handler);
-                var decFieldProxy = Proxy.makeJSProxy(incFieldProxy, DecFieldProxy.handler);
+                var incFieldProxy = makeIncFieldProxy(subject);
+                var decFieldProxy = makeDecFieldProxy(incFieldProxy);
                 
-
                 expect(decFieldProxy.a).to.equal(42);
                 expect(decFieldProxy.protoFuncNormal()).to.equal(42); //42 = 42 +1 -1
                 expect(decFieldProxy.a).to.equal(42);
 
                 expect(subject.a).to.equal(42); //original should be changed
-
                 done();
             });
 
             it('IncFieldProxy before IncFieldProxy before IncFieldProxy', function(done) {
                 var subject = new Subject();
-                var incFieldProxy = Proxy.makeJSProxy(subject, IncFieldProxy.handler);
-                var incFieldProxy2 = Proxy.makeJSProxy(incFieldProxy, IncFieldProxy.handler);
-                var incFieldProxy3 = Proxy.makeJSProxy(incFieldProxy2, IncFieldProxy.handler);
+                var incFieldProxy = makeIncFieldProxy(subject);
+                var incFieldProxy2 = makeIncFieldProxy(incFieldProxy);
+                var incFieldProxy3 = makeIncFieldProxy(incFieldProxy2);
                 
 
                 expect(incFieldProxy3.a).to.equal(42);
@@ -287,15 +282,14 @@ describe('proxy.js tests', function() {
                 expect(incFieldProxy3.a).to.equal(45);
 
                 expect(subject.a).to.equal(45); //original should be changed
-
                 done();
             });
 
             it('IncFieldProxy before DecFieldProxy before IncFieldProxy', function(done) {
                 var subject = new Subject();
-                var incFieldProxy = Proxy.makeJSProxy(subject, IncFieldProxy.handler);
-                var decFieldProxy = Proxy.makeJSProxy(incFieldProxy, DecFieldProxy.handler);
-                var incFieldProxy2 = Proxy.makeJSProxy(decFieldProxy, IncFieldProxy.handler);
+                var incFieldProxy = makeIncFieldProxy(subject);
+                var decFieldProxy = makeDecFieldProxy(incFieldProxy);
+                var incFieldProxy2 = makeIncFieldProxy(decFieldProxy);
                 
 
                 expect(incFieldProxy2.a).to.equal(42);
@@ -303,9 +297,26 @@ describe('proxy.js tests', function() {
                 expect(incFieldProxy2.a).to.equal(43);
 
                 expect(subject.a).to.equal(43); //original should be changed
-                
                 done();
             });
-        });       
+        });
+        describe('State', function() {  
+            it('InvocCounterProxy', function(done) {
+                var subject = new Subject();
+                var invocCounterProxy = makeInvocCounterProxy(subject);
+
+                expect(invocCounterProxy.a).to.equal(42);
+                expect(invocCounterProxy.protoFunc()).to.equal(1);
+                expect(invocCounterProxy.a).to.equal(43);
+                expect(invocCounterProxy.protoFunc()).to.equal(2);
+                expect(invocCounterProxy.a).to.equal(44);
+                expect(invocCounterProxy.protoFunc()).to.equal(3);
+                expect(invocCounterProxy.a).to.equal(45);
+                done();
+            });
+        });   
+        //todo test where 1proxy overwrites a method and chained proxy that overwrites an other methods  
     });
 });
+
+

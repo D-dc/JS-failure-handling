@@ -61,7 +61,6 @@ var makeJSProxy = function(target, handler){
             }
                 
         }else{
-            console.log('ignored', target[slot], slot)
             //TODO fields etc. ignored
             
         }
@@ -166,6 +165,6 @@ var yy = makeJSProxy(y, LOGProxy.handler);*/
 
 
 if (typeof module !== 'undefined' && module.exports){
-    exports.JSProxy = JSProxy;
+    //exports.JSProxy = JSProxy;
     exports.makeJSProxy = makeJSProxy;
 }
