@@ -1,10 +1,12 @@
 'use strict';
 
+/*jslint white: true, browser: true, debug: true*/
+/*global exports, module*/
 var noOp = function(){};
 
 // Wrapper...
 // a catch all method would be nice here
-var JSProxy = function(target, handler){
+/*var JSProxy = function(target, handler){
     
     var slot;
     for (slot in handler) {
@@ -25,40 +27,50 @@ var JSProxy = function(target, handler){
             //TODO fields etc. ignored
         }
     }
-};
+};*/
 
 // Delegation based ...
 // prefered because if we do not instrument a certain function call
 // the original will be looked up by following the chain of parent objects
+//
+// These are basically static proxies, meaning that if the structure of the original
+// object is changed these are not reflected in the proxy created here.
 var makeJSProxy = function(target, handler){
     var p = Object.create(target); //prototype of p is target
 
+
+    var addHandler = function(slot){
+        if(handler[slot] !== undefined){
+            
+            p[slot] = function(){
+                        
+                var args = Array.prototype.slice.call(arguments);
+                var proto = Object.getPrototypeOf(this); //! static parent
+                var subject = this.__getProto(); //dynamic parent
+
+                return handler[slot](proto[slot], args, proto, subject);
+
+            };
+
+        }else{
+               
+            p[slot] = function(){
+
+                var args = Array.prototype.slice.call(arguments);
+                var proto = Object.getPrototypeOf(this); //! static parent
+                
+                return proto[slot].apply(proto, args);
+
+            };
+        } 
+    };   
+    
+    console.log('TT', JSON.stringify(target))
     var slot;
     for (slot in target) {
 
         if(typeof target[slot] === 'function'){
-            if(handler[slot] !== undefined){
-                 
-                p[slot] = function(slot){
-                    return function(){
-                    
-                        var args = Array.prototype.slice.call(arguments);
-                        var proto = Object.getPrototypeOf(this); //! static parent
-                        var subject = this._getProto(); //dynamic parent
-                        return handler[slot](proto[slot], args, proto, subject);
-                    };
-                }(slot);
-        
-            }else{
-               
-                p[slot] = function(slot){
-                    return function(){
-                        var args = Array.prototype.slice.call(arguments);
-                        var proto = Object.getPrototypeOf(this); //! static parent
-                        return proto[slot].apply(proto, args);
-                    };
-                }(slot);
-            }
+            addHandler(slot);
                 
         }else{
             //TODO fields etc. ignored
@@ -71,14 +83,14 @@ var makeJSProxy = function(target, handler){
     //  problem this.a goes up in the chain to find it 
     //  but this.a--; => this.a = this.a -1; does not go up in the chain
     //  it just sets the immediate parent
-    p._getProto = function(){
+    p.__getProto = function(){
         var proto = Object.getPrototypeOf(this); //!
     
-        if(!proto._getProto){
+        if(!proto.__getProto){
             return proto;
         }
 
-        var interProto =  proto._getProto();
+        var interProto =  proto.__getProto();
         return interProto;
     };
 

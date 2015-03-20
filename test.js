@@ -28,7 +28,9 @@ Subject.prototype.unInstFunc = function(){ return this.a;};
 var makeNoOpProxy = function(target){
     return Proxy.makeJSProxy(target, {
         protoFunc: function(originalCall, args, context){
+
             return originalCall.apply(context, args);
+
         }
     });           
 };    
@@ -38,7 +40,9 @@ var makeNoOpProxy = function(target){
 var makeDropOpProxy = function(target){
     return Proxy.makeJSProxy(target, {
         protoFunc: function(originalCall, args, context){
+            
             return context.a;// we bypass the call and just return the unincremented number
+
         }
     });           
 };
@@ -48,8 +52,10 @@ var makeDropOpProxy = function(target){
 var makeIncFieldProxy = function(target){
     return Proxy.makeJSProxy(target, {
         protoFuncNormal: function(originalCall, args, context, subject){
+
             subject.a++;
             return originalCall.apply(context, args);
+
         }
     });           
 };
@@ -59,8 +65,10 @@ var makeIncFieldProxy = function(target){
 var makeDecFieldProxy = function(target){
     return new Proxy.makeJSProxy(target, {
         protoFuncNormal: function(originalCall, args, context, subject){
+
             subject.a--;
             return originalCall.apply(context, args);
+
         }
     });           
 };
@@ -71,9 +79,11 @@ var makeInvocCounterProxy = function(target){
     var counter = 0;
     return Proxy.makeJSProxy(target, {
         protoFunc: function(originalCall, args, context, subject){
+            
             counter++;
             originalCall.apply(context, args);
             return counter; //todo
+
         }
     });           
 };
@@ -83,7 +93,7 @@ var makeInvocCounterProxy = function(target){
 
 describe('proxy.js tests', function() {
     describe('Delegation Proxy', function() {
-        describe('Single', function() {
+        describe('Single proxy on Subject', function() {
             it('noOpProxy', function(done) {
                 var subject = new Subject();
                 var noOpProxy = makeNoOpProxy(subject);
@@ -147,7 +157,7 @@ describe('proxy.js tests', function() {
             });
         });     
         
-        describe('Double', function() {
+        describe('2 Chained proxies on Subject', function() {
             it('noOpProxy', function(done) {
                 var subject = new Subject();
                 var noOpProxy1 = makeNoOpProxy(subject);
@@ -210,10 +220,28 @@ describe('proxy.js tests', function() {
                 // a = 45
                 expect(subject.a).to.equal(45);
                 done();
-            });   
-        }); 
+            });
 
-        describe('Chaining', function() {
+            it('chained proxies on different methods', function(done) {
+                var subject = new Subject();
+                var invocCounterProxy = makeInvocCounterProxy(subject); // protoFunc
+                var incFieldProxy = makeIncFieldProxy(invocCounterProxy); // protoFuncNormal
+                
+                expect(subject.a).to.equal(42);
+                expect(incFieldProxy.protoFunc()).to.equal(1);
+                expect(subject.a).to.equal(43);
+
+                expect(subject.a).to.equal(43);
+                expect(incFieldProxy.protoFuncNormal()).to.equal(44);
+                expect(subject.a).to.equal(44);
+                
+                done();
+            });   
+   
+        }); 
+        
+
+        describe('More Chained proxies on Subject', function() {
             it('IncFieldProxy', function(done) {
                 var subject = new Subject();
                 var incFieldProxy = makeIncFieldProxy(subject);
@@ -300,7 +328,54 @@ describe('proxy.js tests', function() {
                 done();
             });
         });
-        describe('State', function() {  
+
+        describe('Multiple proxies for 1 Subject', function() {
+            it('IncFieldProxy, DecFieldProxy', function(done) {
+                var subject = new Subject();
+                var incFieldProxy = makeIncFieldProxy(subject);
+                var decFieldProxy = makeDecFieldProxy(subject);
+                
+                expect(subject.a).to.equal(42);
+                expect(incFieldProxy.a).to.equal(42);
+                expect(decFieldProxy.a).to.equal(42);
+
+                expect(incFieldProxy.protoFuncNormal()).to.equal(43);
+                expect(incFieldProxy.a).to.equal(43);
+                expect(decFieldProxy.a).to.equal(43);
+                expect(subject.a).to.equal(43);
+
+                expect(decFieldProxy.protoFuncNormal()).to.equal(42);
+                expect(incFieldProxy.a).to.equal(42);
+                expect(decFieldProxy.a).to.equal(42);
+                expect(subject.a).to.equal(42);
+                
+                done();
+            }); 
+
+            it('DecFieldProxy before DecFieldProxy, IncFieldProxy before IncFieldProxy', function(done) {
+                var subject = new Subject();
+                var p1 = makeDecFieldProxy(makeDecFieldProxy(subject));
+                var p2 = makeIncFieldProxy(makeIncFieldProxy(subject));
+                
+                expect(subject.a).to.equal(42);
+                expect(p1.a).to.equal(42);
+                expect(p2.a).to.equal(42);
+
+                expect(p1.protoFuncNormal()).to.equal(40);
+                expect(p1.a).to.equal(40);
+                expect(p2.a).to.equal(40);
+                expect(subject.a).to.equal(40);
+
+                expect(p2.protoFuncNormal()).to.equal(42);
+                expect(p1.a).to.equal(42);
+                expect(p2.a).to.equal(42);
+                expect(subject.a).to.equal(42);
+
+                done();
+            }); 
+        });    
+
+        describe('Proxies have State', function() {  
             it('InvocCounterProxy', function(done) {
                 var subject = new Subject();
                 var invocCounterProxy = makeInvocCounterProxy(subject);

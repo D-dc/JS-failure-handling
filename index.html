@@ -6,9 +6,185 @@
    
 </head>
 <body>
-  <!--<script src="reflect.js"></script>-->
+  
 
   <h2>Code</h2>
-  <script src="code.js"></script>
+  <!--
+  	<script src="code.js"></script>
+  	-->
+	<script src="reflect.js"></script>
+  
+
+  <script src="example/temperature/application.js"></script>
+  <script src="example/temperature/proxy.js"></script>
+  <script>
+  'use strict';
+
+
+/*
+
+*/
+var callInterceptProxy = function(target, handler) {
+
+    return new Proxy(target, {
+
+        get: function(target, name, receiver) {
+        	//target is the original Object
+        	//name is the function invoked
+        	//receiver is the proxy itself (!infinite recursion)
+        	
+
+            //property invocation
+            //will invoke this get trap and then perform an apply
+            if(typeof target[name] === 'function'){
+
+            	if(name in handler){
+            		//we intercept here to manipulate the method invocation arguments
+					return function(){
+		            	var args = Array.prototype.slice.call(arguments);
+
+		            	args = handler[name](args, target, name);
+
+						//by applying with 'this' we reinvoke the proxy if the method we are trying to invoke
+						//does some self lookups, assignments etc.
+		            	return target[name].apply(receiver, args);
+	            	};
+            	}
+            	
+	            return target[name];
+            }
+
+            //normal property access: proxy.foo or proxy['foo']
+            return target[name];
+
+        }
+
+    });
+};
+
+/*
+
+*/
+var rpcCallInterceptProxy = function(target, handler){
+	return callInterceptProxy(target, {'rpcCall': handler});
+};
+
+
+var catchAllProxy = function(target){
+	return rpcCallInterceptProxy(target, 
+		function(args){
+			if(args.length < 3) return args;
+			
+			var funcCall = args[0],
+				funcArgs = args[1],
+				cb = args[2];
+
+				args[2] = function(err, res){
+					console.log('CatchAllProxy');
+					if(err) alert(err);
+
+					return cb(err, res);
+				};
+			return args;
+		});
+};
+
+//TODO factor in: retry-times, retry-delay
+var retryOnFailureProxy = function(target){
+	return rpcCallInterceptProxy(target, 
+		function(args, target, name){
+			if(args.length < 3) return args;
+			
+			var funcCall = args[0],
+				funcArgs = args[1],
+				cb = args[2];
+
+				args[2] = function(err, res){
+					console.log('RetryOnFailureProxy');
+					if(err) return target[name].apply(this, args); //Problem you keep on building state here
+
+					return cb(err, res);
+				};
+			return args;
+		});
+};
+
+//
+var defaultValueProxy = function(target, defVal){
+	return rpcCallInterceptProxy(target,
+	 	function(args, target, name){
+			if(args.length < 3) return args;
+			
+			var funcCall = args[0],
+				funcArgs = args[1],
+				cb = args[2];
+
+				args[2] = function(err, res){
+					console.log('DefaultValueProxy');
+					if(err) return cb(null, defVal);
+
+					return cb(err, res);
+				};
+			return args;
+		});
+};
+
+var reportNativeErrorProxy = function(target){
+	var nativeErrors = [
+		EvalError, 
+		RangeError, 
+		ReferenceError, 
+		SyntaxError, 
+		TypeError, 
+		URIError
+	];
+
+	return new rpcCallInterceptProxy(target, 
+		function(args, target, name){
+			if(args.length < 3) return args;
+			
+			var funcCall = args[0],
+				funcArgs = args[1],
+				cb = args[2];
+				args[2] = function(err, res){
+					console.log('reportNativeErrorProxy');
+					if(err && nativeErrors.some(function(error){
+						return (err instanceof error)
+					})){
+						console.log('Remote native JS Error.'); 
+						throw err;
+					}
+
+					return cb(err, res);
+				};
+			return args;
+		});
+};
+
+
+
+
+
+
+var o = new RPC();
+
+var p2 = retryOnFailureProxy(catchAllProxy(o))
+var p3 = defaultValueProxy(reportNativeErrorProxy(o), 5);
+
+
+/*
+
+prox.rpcCall('remoteFunc', [1,2], function(err, res){ 
+	console.log(' Callback'); 
+	}, 100); 
+
+*/
+
+
+
+
+
+  </script>
 </body>
 </html>
+

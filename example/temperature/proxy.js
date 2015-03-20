@@ -32,7 +32,8 @@
 	        		if(err && err instanceof ExpectedNumberError){
 	        			alert(err.message);
 	        			// do not propagate the error
-	        			// could do: cb(err, 0);
+	        			// could do: 
+	        			cb(err, 0);
 	        		}else{
 	        			return cb(err, res);
 	        		}

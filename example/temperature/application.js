@@ -31,9 +31,10 @@ ExpectedNumberError.prototype.constructor = ExpectedNumberError;
 ////////
 
 //simulate possible failures
-var RPC = function(){};
+var RPC = function(){this.a=1;};
 
 RPC.prototype.rpcCall = function(func, argArr, cb, due){
+	//console.log('this,', this.a)
 	var dueTimeout = setTimeout(function(){
 		clearTimeout(cbTimeout);
 		var err= new TimeOutError();
@@ -44,6 +45,7 @@ RPC.prototype.rpcCall = function(func, argArr, cb, due){
 		clearTimeout(dueTimeout);
 		var celcius = argArr[0];
 		
+		/*cb(new SyntaxError());*/
 		//APPLICATION CODE
 		var fahrenheit = convert(celcius);
 		if(fahrenheit){
@@ -55,6 +57,7 @@ RPC.prototype.rpcCall = function(func, argArr, cb, due){
 		//APPLICATION CODE
 
 	}, Math.floor((Math.random() * 1000) + 1));
+	return 1;
 };
 
 // Actual application code...
