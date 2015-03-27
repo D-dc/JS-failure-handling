@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+
+</head>
+
+<body>
+    
+<script type="text/javascript" src="/rpc/bundle.js"></script>
+    <script src="handling/reflect.js"></script>
+    <script src="handling/nodeHandling.js"></script>
+    <script type="text/javascript">
+
+var TimeOutError = function (message) {
+    this.name = 'TimeOutError';
+    this.message = (message || '');
+};
+
+TimeOutError.prototype = new Error();
+TimeOutError.prototype.constructor = TimeOutError;
+
+////////
+
+var FunctionNotFoundError = function (message) {
+    this.name = 'FunctionNotFoundError';
+    this.message = (message || '');
+};
+
+FunctionNotFoundError.prototype = new Error();
+FunctionNotFoundError.prototype.constructor = FunctionNotFoundError;
+
+////////
+
+var ExpectedNumberError = function (message) {
+    this.name = 'ExpectedNumberError';
+    this.message = (message || '');
+};
+
+ExpectedNumberError.prototype = new Error();
+ExpectedNumberError.prototype.constructor = ExpectedNumberError;
+
+
+//APPLICATION CODE
+
+// var localVariable = 42;
+
+// var r = new RPC();
+
+
+
+// var handleContextual = function(){
+//     console.log('inside contextual, ', localVariable);
+//     localVariable++;
+// };
+
+// var a = makeFailureProxy(r, new LeafA());//, handleContextual);
+// var b = makeFailureProxy(r,  new LeafB()); 
+
+
+// var counter = 5;
+
+
+
+
+
+    </script>
+
+    <h2>Simple chat application</h2>
+    <div class="chat">
+          <div class="chatScreen" style="height:350px;overflow:scroll;"></div>
+          Username:
+          <input type="text" class="author" placeholder="My name" /> <input type="submit" onclick="javascript:setName();" value="Set" /></br>
+          Msg: <input type="text" class="message" placeholder="My message..." /></br>
+          <input type="submit" onclick="javascript:speakMsg();" value="Speak" />
+    </div>
+  <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+  <!-- actual code -->
+  <script src="/client.js"></script>
+</body>
+</html>

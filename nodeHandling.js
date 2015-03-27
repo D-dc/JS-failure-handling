@@ -1,4 +1,11 @@
 'use strict';
+if(typeof exports !== 'undefined')
+	var p = require('./reflect.js')
+
+
+//works on node v0.12.1
+//use: node --harmony-proxies
+
 
 /*jslint white: true, browser: true, debug: true*/
 /*global global, exports, module, require, console*/
@@ -454,3 +461,10 @@ LeafB.prototype.onException = function(){
 	console.log('leaf B');
 	LeafB.super(this);
 };
+
+
+if(typeof exports !== 'undefined'){
+	global.makeFailureProxy = makeFailureProxy;
+	global.LeafB = LeafB;
+	global.LeafA = LeafA;
+}
