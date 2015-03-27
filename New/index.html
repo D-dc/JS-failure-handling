@@ -43,7 +43,10 @@ ExpectedNumberError.prototype = new Error();
 ExpectedNumberError.prototype.constructor = ExpectedNumberError;
 
 
-        var RPC = function(){this.a=1;};
+        var RPC = function(){
+            this.a=1;
+            console.log('new RPC')
+        };
 
 RPC.prototype.rpcCall = function(func, argArr, cb, due){
     this.a++;
@@ -87,23 +90,95 @@ RPC.prototype.rpcCall = function(func, argArr, cb, due){
 }
 //APPLICATION CODE
 
+var localVariable = 42;
+
 var r = new RPC();
 
-var a = makeFailureProxy(r, new CallA());
-var b = makeFailureProxy(r, new CallB()); 
 
-//var a = makeFailureProxy(r, new BlockNode());
-//var b = makeFailureProxy(r, new CallB());
 
+var handleContextual = function(){
+    console.log('inside contextual, ', localVariable);
+    localVariable++;
+};
+
+var a = makeFailureProxy(r, new LeafA());//, handleContextual);
+var b = makeFailureProxy(r,  new LeafB()); 
 
 
 var counter = 5;
 
-/*b.rpcCall('abc', [5], function AA(err, res){
-    counter++;
-    console.log(counter);
-});*/
 
+
+
+////////////////////////////////////////////////////////////
+/*var makeTop = function(top){
+    var f = new AObj();
+    f.__proto__ = top;
+    return f;
+};*/
+
+/*var AObj = function(ctext){
+    this.a=0;
+    this.ctext = ctext;
+    //this.contextObject=ctext;
+    
+};
+AObj.prototype = {ctext:true}
+
+AObj.prototype.afunc = function(){ 
+    this.a++;
+    console.log(this.contextObject)
+    return 'a';}
+
+
+
+var BObj = function(ctext){
+    AObj.call(this, ctext);
+    this.ctext = ctext;
+};
+BObj.prototype = Object.create(AObj.prototype);
+BObj.prototype.afunc = function(){ 
+    console.log(Object.getPrototypeOf(this).afunc());//.afunc();
+    //console.log(this.contextObject)
+    return 'b';
+}
+BObj.prototype.bfunc = function(){ return 'b';}
+
+
+
+var CObj = function(ctext){
+    BObj.call(this, ctext);
+    this.ctext = ctext;
+};
+CObj.prototype = Object.create(BObj.prototype);
+CObj.prototype.afunc = function(){ 
+    Object.getPrototypeOf(this.constructor.prototype).afunc();
+    console.log(this.contextObject)
+    return 'c';}
+CObj.prototype.bfunc = function(){ return 'c';}
+CObj.prototype.cfunc = function(){ return 'c';}
+
+
+function Context (counter){
+    this.counter=counter;
+}
+Context.prototype.inc = function(){
+    this.counter++;
+}
+
+var aContext = new Context(1);
+var bContext = new Context(1);
+
+var atest = new AObj(aContext);
+/*console.log(atest.afunc());
+console.log('---');
+var btest = new BObj(bContext);
+console.log(btest.afunc());
+console.log('---');
+var ctest = new CObj({ccc:1});
+//console.log(ctest.afunc());*/
+
+////////////////////////////////////////////////////////////
 
 
     </script>

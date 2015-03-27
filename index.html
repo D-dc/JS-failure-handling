@@ -1,190 +1,186 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="UTF-8">
-  <title>Code</title>
-   
+    <meta charset="UTF-8">
+    <title>Temperature</title>
+
 </head>
+
 <body>
-  
+    
 
-  <h2>Code</h2>
-  <!--
-  	<script src="code.js"></script>
-  	-->
-	<script src="reflect.js"></script>
-  
+    <script src="../reflect.js"></script>
+    <script src="nodeHandling.js"></script>
+    <script type="text/javascript">
 
-  <script src="example/temperature/application.js"></script>
-  <script src="example/temperature/proxy.js"></script>
-  <script>
-  'use strict';
+var TimeOutError = function (message) {
+    this.name = 'TimeOutError';
+    this.message = (message || '');
+};
+
+TimeOutError.prototype = new Error();
+TimeOutError.prototype.constructor = TimeOutError;
+
+////////
+
+var FunctionNotFoundError = function (message) {
+    this.name = 'FunctionNotFoundError';
+    this.message = (message || '');
+};
+
+FunctionNotFoundError.prototype = new Error();
+FunctionNotFoundError.prototype.constructor = FunctionNotFoundError;
+
+////////
+
+var ExpectedNumberError = function (message) {
+    this.name = 'ExpectedNumberError';
+    this.message = (message || '');
+};
+
+ExpectedNumberError.prototype = new Error();
+ExpectedNumberError.prototype.constructor = ExpectedNumberError;
 
 
-/*
+        var RPC = function(){
+            this.a=1;
+            console.log('new RPC')
+        };
 
-*/
-var callInterceptProxy = function(target, handler) {
+RPC.prototype.rpcCall = function(func, argArr, cb, due){
+    this.a++;
+    due =500;
+    var dueTimeout = setTimeout(function(){
+        clearTimeout(cbTimeout);
+        var err= new TimeOutError();
+        cb(err);
+    }, due);
 
-    return new Proxy(target, {
-
-        get: function(target, name, receiver) {
-        	//target is the original Object
-        	//name is the function invoked
-        	//receiver is the proxy itself (!infinite recursion)
-        	
-
-            //property invocation
-            //will invoke this get trap and then perform an apply
-            if(typeof target[name] === 'function'){
-
-            	if(name in handler){
-            		//we intercept here to manipulate the method invocation arguments
-					return function(){
-		            	var args = Array.prototype.slice.call(arguments);
-
-		            	args = handler[name](args, target, name);
-
-						//by applying with 'this' we reinvoke the proxy if the method we are trying to invoke
-						//does some self lookups, assignments etc.
-		            	return target[name].apply(receiver, args);
-	            	};
-            	}
-            	
-	            return target[name];
-            }
-
-            //normal property access: proxy.foo or proxy['foo']
-            return target[name];
-
+    var cbTimeout = setTimeout(function(){
+        clearTimeout(dueTimeout);
+        var celcius = argArr[0];
+        
+        //APPLICATION CODE
+        var fahrenheit = convert(celcius);
+        if(fahrenheit){
+            cb(null, fahrenheit);
+        }else{ //NaN
+            var err = new ExpectedNumberError('\'' + celcius + '\' is not a number.');
+            cb(err);
         }
+        //APPLICATION CODE
 
-    });
+    }, Math.floor((Math.random() * 1000) + 1));
+    return func;
 };
 
-/*
+// Actual application code...
+//APPLICATION CODE
+{
+    var convert = function(celcius){
+        return celcius * factor() + add;
+    };
 
-*/
-var rpcCallInterceptProxy = function(target, handler){
-	return callInterceptProxy(target, {'rpcCall': handler});
+    var factor = function () {
+        return 9 / 5;
+    };
+    var add = 32;
+
+}
+//APPLICATION CODE
+
+var localVariable = 42;
+
+var r = new RPC();
+
+
+
+var handleContextual = function(){
+    console.log('inside contextual, ', localVariable);
+    localVariable++;
 };
 
+var a = makeFailureProxy(r, new LeafA());//, handleContextual);
+var b = makeFailureProxy(r,  new LeafB()); 
 
-var catchAllProxy = function(target){
-	return rpcCallInterceptProxy(target, 
-		function(args){
-			if(args.length < 3) return args;
-			
-			var funcCall = args[0],
-				funcArgs = args[1],
-				cb = args[2];
 
-				args[2] = function(err, res){
-					console.log('CatchAllProxy');
-					if(err) alert(err);
+var counter = 5;
 
-					return cb(err, res);
-				};
-			return args;
-		});
+
+
+
+////////////////////////////////////////////////////////////
+/*var makeTop = function(top){
+    var f = new AObj();
+    f.__proto__ = top;
+    return f;
+};*/
+
+/*var AObj = function(ctext){
+    this.a=0;
+    this.ctext = ctext;
+    //this.contextObject=ctext;
+    
 };
+AObj.prototype = {ctext:true}
 
-//TODO factor in: retry-times, retry-delay
-var retryOnFailureProxy = function(target){
-	return rpcCallInterceptProxy(target, 
-		function(args, target, name){
-			if(args.length < 3) return args;
-			
-			var funcCall = args[0],
-				funcArgs = args[1],
-				cb = args[2];
+AObj.prototype.afunc = function(){ 
+    this.a++;
+    console.log(this.contextObject)
+    return 'a';}
 
-				args[2] = function(err, res){
-					console.log('RetryOnFailureProxy');
-					if(err) return target[name].apply(this, args); //Problem you keep on building state here
 
-					return cb(err, res);
-				};
-			return args;
-		});
+
+var BObj = function(ctext){
+    AObj.call(this, ctext);
+    this.ctext = ctext;
 };
+BObj.prototype = Object.create(AObj.prototype);
+BObj.prototype.afunc = function(){ 
+    console.log(Object.getPrototypeOf(this).afunc());//.afunc();
+    //console.log(this.contextObject)
+    return 'b';
+}
+BObj.prototype.bfunc = function(){ return 'b';}
 
-//
-var defaultValueProxy = function(target, defVal){
-	return rpcCallInterceptProxy(target,
-	 	function(args, target, name){
-			if(args.length < 3) return args;
-			
-			var funcCall = args[0],
-				funcArgs = args[1],
-				cb = args[2];
 
-				args[2] = function(err, res){
-					console.log('DefaultValueProxy');
-					if(err) return cb(null, defVal);
 
-					return cb(err, res);
-				};
-			return args;
-		});
+var CObj = function(ctext){
+    BObj.call(this, ctext);
+    this.ctext = ctext;
 };
-
-var reportNativeErrorProxy = function(target){
-	var nativeErrors = [
-		EvalError, 
-		RangeError, 
-		ReferenceError, 
-		SyntaxError, 
-		TypeError, 
-		URIError
-	];
-
-	return new rpcCallInterceptProxy(target, 
-		function(args, target, name){
-			if(args.length < 3) return args;
-			
-			var funcCall = args[0],
-				funcArgs = args[1],
-				cb = args[2];
-				args[2] = function(err, res){
-					console.log('reportNativeErrorProxy');
-					if(err && nativeErrors.some(function(error){
-						return (err instanceof error)
-					})){
-						console.log('Remote native JS Error.'); 
-						throw err;
-					}
-
-					return cb(err, res);
-				};
-			return args;
-		});
-};
+CObj.prototype = Object.create(BObj.prototype);
+CObj.prototype.afunc = function(){ 
+    Object.getPrototypeOf(this.constructor.prototype).afunc();
+    console.log(this.contextObject)
+    return 'c';}
+CObj.prototype.bfunc = function(){ return 'c';}
+CObj.prototype.cfunc = function(){ return 'c';}
 
 
+function Context (counter){
+    this.counter=counter;
+}
+Context.prototype.inc = function(){
+    this.counter++;
+}
+
+var aContext = new Context(1);
+var bContext = new Context(1);
+
+var atest = new AObj(aContext);
+/*console.log(atest.afunc());
+console.log('---');
+var btest = new BObj(bContext);
+console.log(btest.afunc());
+console.log('---');
+var ctest = new CObj({ccc:1});
+//console.log(ctest.afunc());*/
+
+////////////////////////////////////////////////////////////
 
 
-
-
-var o = new RPC();
-
-var p2 = retryOnFailureProxy(catchAllProxy(o))
-var p3 = defaultValueProxy(reportNativeErrorProxy(o), 5);
-
-
-/*
-
-prox.rpcCall('remoteFunc', [1,2], function(err, res){ 
-	console.log(' Callback'); 
-	}, 100); 
-
-*/
-
-
-
-
-
-  </script>
+    </script>
 </body>
 </html>
-
