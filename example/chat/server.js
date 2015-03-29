@@ -5,9 +5,9 @@ var express = require('express'),
     serverHttp = require('http').createServer(app),
     ServerRpc = require('rpc'),//require('../../lib/rpc-server.js'),
     port = process.env.PORT || 3000,
-    h = require('../../nodeHandling.js');
+    h = require('../../nodeHandling.js'),
+    err = require('./error.js');
 
-console.log(h)
 
 serverHttp.listen(port, function() {
     console.log('Server listening at port %d', port);
@@ -18,30 +18,7 @@ app.use('/handling', express.static(__dirname + '/../../'));
 app.use('/', express.static(__dirname + '/'));
 
 
-var NoAuthorError = function (message) {
-    this.name = 'NoAuthorError';
-    this.message = (message || '');
-};
 
-NoAuthorError.prototype = new Error();
-NoAuthorError.prototype.constructor = NoAuthorError;
-
-
-var EmptyMessageError = function (message) {
-    this.name = 'EmptyMessageError';
-    this.message = (message || '');
-};
-
-EmptyMessageError.prototype = new Error();
-EmptyMessageError.prototype.constructor = EmptyMessageError;
-
-var UsernameNotAllowedError = function (message) {
-    this.name = 'UsernameNotAllowedError';
-    this.message = (message || '');
-};
-
-UsernameNotAllowedError.prototype = new Error();
-UsernameNotAllowedError.prototype.constructor = UsernameNotAllowedError;
 ///////////////////////////////////////////////////////////////////////
 
 
@@ -55,42 +32,73 @@ var options = {
 // make the ServerRpc by giving the http server, options
 var rpc = new ServerRpc(serverHttp, options);
 
-var myServer =makeFailureProxy(rpc,  new LeafB());
+var myServer = makeFailureProxy(rpc,  'LeafB');
 
 
-var usernames ={};
+var usernames = {};
 
 myServer.onConnection(function(client){
-    console.log(client.remoteClientId)
-    myServer.rpcCall('serverInfo', ['new client joined' + client.remoteClientId.toString() + '.' ]);
 
-    //EVENTS called on server
-    client.on('disconnect', function(){ myServer.rpcCall('serverInfo', ['client disconnect'])}); // on disconnected        
-    client.on('error', function(d) { myServer.rpcCall('serverInfo', ['error'+d])});
-    client.on('reconnect', function(d) { myServer.rpcCall('serverInfo', ['reconnect'+d])});
+    myServer.rpcCall('serverInfo', ['new client joined ' + client.id.toString() + '.' ]);
+
+    client.on('disconnect', function(){ 
+        myServer.rpcCall('serverInfo', ['client ' + findUsername(client.id) + ' left.']);
+        //deleteById(client.id);
+    }); 
+
+    client.on('error', function(d) { 
+        myServer.rpcCall('serverInfo', ['error'+d])});
+
+    client.on('reconnect', function(d) { 
+        myServer.rpcCall('serverInfo', ['reconnect'+d])});
 });
+
+var deleteById = function(id){
+    for (var i in usernames) {
+        if(usernames[i] === id)
+            delete usernames[i];
+    };
+};
+
+var findUsername = function(id){
+    for (var i in usernames) {
+        if(usernames[i] === id)
+            return i;
+    };
+};
+
+var containsHtml = function(v){
+    var r= new RegExp("<([A-Za-z][A-Za-z0-9]*)\\b[^>]*>(.*?)</\\1>");
+    return r.test(v);
+};
 
 //Expose functions to be called from client
 myServer.expose({
     'sayMsg': function(author, message) {
-        
-        if(!author || !usernames[name]) throw new NoAuthorError('message is missing an author');
-        if(!message) throw new EmptyMessageError('sending an empty message');
 
-        console.log('broadcasting to all clients listening');
+        if(!author || !usernames[author]) throw new NoAuthorError('message is missing an author.');
+        if(!message) throw new EmptyMessageError('empty messages are not allowed.');
+        if(containsHtml(author) || containsHtml(message)) throw new HtmlNotAllowedError('No HTML allowed in username or message.')
         
+        //broadcast
         myServer.rpcCall('hearMsg', [author, message]);
     }, 
     'setName': function(client, name) {
-        console.log('Setting username ', name, ' for ', client)
-        if(usernames[name]){
-            
-            throw new UsernameNotAllowedError(name + ' is already in use.')
+        console.log(client, name)
+        if(containsHtml(client) || containsHtml(name)) throw new HtmlNotAllowedError('No HTML allowed in username.')
+        if(usernames[name] && usernames[name] !== client) throw new UsernameNotAllowedError(name + ' is already in use.');
+
+        console.log('Setting username ', name, ' for ', client);
         
+        var prevName = findUsername(client);
+        if(prevName){
+            deleteById(client);
+            myServer.rpcCall('serverInfo', [prevName + ' is now known as ' + name + '.']);
         }else{
-            
-            usernames[name] = client;
-        
+            myServer.rpcCall('serverInfo', [client + ' is now known as ' + name + '.']);
         }
+        
+        usernames[name] = client;
+        
     }
 });

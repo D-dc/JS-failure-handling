@@ -94,7 +94,7 @@ var findCb = function(args){
 var makeFailureProxy = function (target, failureHandler, contextualHandler){
 	//console.log(failureHandler);
 
-	/*var ExcFunc;
+	var ExcFunc;
 	if(typeof window !== 'undefined' && window[failureHandler]){ //browser
 
 		ExcFunc = window[failureHandler];
@@ -107,7 +107,7 @@ var makeFailureProxy = function (target, failureHandler, contextualHandler){
 		
 		return new Error('FailureHandler not defined, ' + failureHandler);
 
-	}*/	
+	}	
 
 
 	var proxyHandler = Object.create({});
@@ -137,7 +137,9 @@ var makeFailureProxy = function (target, failureHandler, contextualHandler){
 							target:this,//target !!!! back to proxy
 							args:args.slice(),  //copy
 							funcName:name
-						}, 
+						},
+						callError: null,
+						callResult: null, 
 						getOriginalCb: function(){
 							return this.thunk.args[cbPosition];
 						},
@@ -173,8 +175,8 @@ var makeFailureProxy = function (target, failureHandler, contextualHandler){
 							if(err){
 								
 								console.log('Error in callback');
-								contextObject.callbackError = err;
-								contextObject.callbackResult = res;
+								contextObject.callError = err;
+								contextObject.callResult = res;
 								failureHandler.ctxt = contextObject;
 								return failureHandler.handleException(); 
 							
@@ -185,7 +187,7 @@ var makeFailureProxy = function (target, failureHandler, contextualHandler){
 						};	
 					};
 
-					//failureHandler = new ExcFunc();	
+					failureHandler = new ExcFunc();	
 					failureHandler.ctxt = ctxtObject;
 
 					if(contextualHandler){
@@ -235,7 +237,7 @@ HandlerNode.prototype.handleException = function(ctxt, target){
 	ctxt = ctxt || self;
 	target = target || self;
 
-	var err = this.ctxt.callbackError;
+	var err = this.ctxt.callError;
 
 	var nativeErrors = [
 		EvalError, 
@@ -244,6 +246,18 @@ HandlerNode.prototype.handleException = function(ctxt, target){
 		SyntaxError, 
 		TypeError, 
 		URIError
+	];
+
+	var libraryErrors = [
+		FunctionNotFoundError,
+		SerializationError,
+		DeserializionError
+	];
+
+	var networkErrors = [
+		TimeOutError,
+		LeaseExpiredError,
+		NoConnectionError
 	];
 
 	var checkInvokeHandler = function(handlerMethod){
@@ -255,7 +269,7 @@ HandlerNode.prototype.handleException = function(ctxt, target){
 
 			if(!target.onException) {
 				
-				throw new Error('Need either onCatchAllMethod or specific method on' + self);
+				throw new Error('Need either onException or specific method on' + target);
 			
 			}else{
 				target.onException.apply(ctxt);
@@ -272,8 +286,16 @@ HandlerNode.prototype.handleException = function(ctxt, target){
 						return (err instanceof error);
 					})){
 		checkInvokeHandler('onNativeException');
-	}else{
+	}else if(err && libraryErrors.some(function(error){
+						return (err instanceof error);
+					})){
+		checkInvokeHandler('onLibraryException');
+	}else if(err && networkErrors.some(function(error){
+						return (err instanceof error);
+					})){		
 		checkInvokeHandler('onNetworkException');
+	}else{
+		checkInvokeHandler('onApplicationException');
 	}
 };
 
@@ -296,78 +318,144 @@ TopNode.prototype.toString = function(){
 	return 'TopNode';
 };
 
-TopNode.prototype.onException = function(){
-	throw new Error('Reached top, no handler');
+TopNode.onException = function(){
+	//throw new Error('Reached top, no handler');
+};
+
+
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+// retry on network exceptions
+var Node1 = function(){
+	console.log('Node1 created');
+};
+Node1.super = function(target){
+	target.handleException(target, TopNode);
+};
+Node1.prototype = new TopNode();
+Node1.prototype.constructor = Node1;
+Node1.toString = function(){
+	return 'Node1';
+};
+
+
+Node1.onNetworkException = function(){
+	console.log(' Node1 onNetworkException', this.ctxt);
+	var self = this;
+
+	Node1.super(this);
+	// if(!this.ctr) this.ctr=0;
+	// 	this.ctr++;
+	// 	console.log('retrying ', this.ctr);
+		
+		
+	// 	if(this.ctr >= 2){
+	// 		Node1.super(this);
+	// 		this.ctr=0;
+	// 		//debugger
+	// 	} else {
+			
+	// 		setTimeout(function (){
+	// 			self.ctxt.retry();
+	// 		}, 2000);
+	// 	}
+
+};
+
+Node1.onException = function(){
+	console.log(' Node1 onException');
+	Node1.super(this);
 };
 
 
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 
-var TierNode = function(){
-	console.log('TierNode created');
+var Node2 = function(){
+	console.log('Node2 created');
 };
-TierNode.prototype = new HandlerNode();
-TierNode.prototype.constructor = TierNode;
-TierNode.toString = function(){
-	return 'TierNode';
+Node2.super = function(target){
+	target.handleException(target, Node1);
 };
-
-TierNode.onException = function(){
-	console.log(' Tier onException', this.ctxt);
-};
-
-TierNode.onNetworkException = function(){
-	console.log(' Tier onNetworkException', this.ctxt);
-	//this.super();
-	this.ctxt.invokeCb(this.ctxt.callbackError, this.ctxt.callbackResult);
-
-	//this.super();
+Node2.prototype = new Node1();
+Node2.prototype.constructor = Node2;
+Node2.toString = function(){
+	return 'Node2';
 };
 
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
-
-var BlockNode = function(){
-	console.log('BlockNode created');
-};
-BlockNode.super = function(target){
-	target.handleException(target, TierNode);
-};
-BlockNode.prototype = new TierNode();
-BlockNode.prototype.constructor = BlockNode;
-BlockNode.toString = function(){
-	return 'BlockNode';
+Node2.onException = function(){
+	console.log(' Node2 onException', this.ctxt);
+	console.error('RemoteException: ', this.ctxt.callError);
+	Node2.super(this);
 };
 
-BlockNode.onException = function(){
-	console.log(' BlockNode onException', this.ctxt);
-	BlockNode.super(this);
+Node2.onNativeException = function(){
+	console.log(' Node2 onNativeException', this.ctxt);
+	console.error('RemoteException: ', this.ctxt.callError);
+	console.info(this.ctxt.callError.stack);
+	Node2.super(this);
 };
-
 
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 
-var CallA = function(){
-	console.log('CallA created');
+var Node3 = function(){
+	console.log('Node3 created');
 };
-CallA.super = function(target){
-	target.handleException(target, BlockNode);
+Node3.super = function(target){
+	target.handleException(target, Node2);
 };
-CallA.prototype = new BlockNode();
-CallA.prototype.constructor = CallA;
-CallA.prototype.toString = function(){
-	return 'CallA';
+Node3.prototype = new Node2();
+Node3.prototype.constructor = Node3;
+Node3.toString = function(){
+	return 'Node3';
 };
 
-CallA.onException = function(){
-	console.log(' CallA onException', this.ctxt);
-	//this.super();	
-	//this.ctxt.invokeCb(this.ctxt.callbackError, this.ctxt.callbackResult);
-
-	CallA.super(this);
+Node3.onApplicationException = function(){
+	var error = this.ctxt.callError;
+	displayGUIAlert(error.message);
+	Node3.super(this);
 };
+Node3.onException = function(){
+	console.log('leaf A');
+	Node3.super(this);
+};
+
+
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
+
+var Node4 = function(){
+	console.log('Node4 created');
+};
+Node4.super = function(target){
+	target.handleException(target, Node3);
+};
+Node4.prototype = new Node3();
+Node4.prototype.constructor = Node4;
+Node4.prototype.toString = function(){
+	return 'Node4';
+};
+Node4.onException = function(){
+
+	Node4.super(this);
+};
+
+Node4.onNetworkException = function(){
+	var self = this;
+	console.log(' Node4 onNetworkException', this.ctxt);
+	var stub = this.ctxt.thunk.target;
+	stub.once('connect', function (){
+		self.ctxt.retry();
+	});
+	//todo remove retry if callback gets executed anyway
+
+	Node4.super(this);
+};
+
+
+//////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////
 
 //GENERATED
 var LeafA = function(){
@@ -375,15 +463,13 @@ var LeafA = function(){
 	//put here state from ALL its prototypes!
 };
 LeafA.super = function(target){
-	target.handleException(target, CallA);
+	target.handleException(target, Node4);
 };
-LeafA.prototype = new CallA();
+LeafA.prototype = new Node4();
 LeafA.prototype.onException = function(){
 	console.log('leaf A');
 	LeafA.super(this);
 };
-//var makeLeaf = function(proto, )
-//var underA = Object.create(CallA);
 
 
 //////////////////////////////////////////////////////////////
@@ -393,7 +479,7 @@ LeafA.prototype.onException = function(){
 
 var CallB = function(ctxt){
 	console.log('CallB created'); 
-	this.parent = new BlockNode();
+	this.parent = new Node3();
 	this.ctxt=ctxt;
 };
 CallB.prototype = new HandlerNode();
@@ -402,50 +488,58 @@ CallB.toString = function(){
 	return 'CallB';
 };
 CallB.super = function(target){
-	target.handleException(target, BlockNode);
+	target.handleException(target, Node3);
 };
-CallB.onNetworkException = function(){
-	console.log(' CallB onNetworkException', this.ctxt);
+CallB.onApplicationException = function(){
+	console.log(' CallB onApplicationException', this.ctxt);
 
+	if(this.ctxt.callError instanceof UsernameNotAllowedError){
+		var rpcArgs = this.ctxt.thunk.args;
+		var name = rpcArgs[1][1];
+		var rand = Math.floor((Math.random() * 100) + 1);
+		var newName = name+rand;
+		rpcArgs[1][1] =newName;
+		
+		var cb = this.ctxt.getOriginalCb;
+		rpcArgs[2] = function (err, res){
+			console.log('EEEEEEE', newName)
+			if(!err){
+				$author.val(newName);
+			}
+			cb(err, res)
+		}
+		this.ctxt.retry();
+	}else{
+		CallB.super(this);
+	}
 	//1. INVOKING OLD CB
-	//originalCall.invokeCb(originalCall.callbackError, originalCall.callbackResult);
+	//originalCall.invokeCb(originalCall.callError, originalCall.callResult);
 
 	//2. REINITIALIZING COMPLETE CALL
 	//originalCall.retry();
-	if(!this.ctr) this.ctr=0;
-		this.ctr++;
-		console.log('retrying ', this.ctr);
+	// if(!this.ctr) this.ctr=0;
+	// 	this.ctr++;
+	// 	console.log('retrying ', this.ctr);
 		
 		
-		if(this.ctr >= 2){
-			CallB.super(this);
-			this.ctr=0;
-			//debugger
-		} else {
-			this.ctxt.retry();
-		}
+	// 	if(this.ctr >= 2){
+	// 		CallB.super(this);
+	// 		this.ctr=0;
+	// 		//debugger
+	// 	} else {
+	// 		this.ctxt.retry();
+	// 	}
 	//3. PROPAGATE TO SUPER
 	//this.super();
 	//this.super(originalCall);
-	//CallB.super('onNetworkException', originalCall);
+	
 
 };
 
-CallB.onApplicationException = function(){
-	console.log(' CallB onApplicationException');
+CallB.onException = function(){
+	console.log(' CallB onException');
 	CallB.super(this);
 };
-
-CallB.onLibraryException = function(){
-	console.log(' CallB onLibraryException');
-	CallB.super(this);
-};
-
-CallB.onNativeException = function(){
-	console.log(' CallB onNativeException');
-	CallB.super(this);
-};
-
 
 //////////////////////////////
 

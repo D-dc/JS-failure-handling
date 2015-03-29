@@ -5,32 +5,28 @@ var options =  {
     leaseRenewOnExpire: true
 };
 
-//HTML elements -> jquery
-
-var $messages = $('.chatScreen'); // Messages area
-var $message = $('.message'); // Input message
-var $author = $('.author'); // Input author
-
-
 var rpc = new ClientRpc('http://127.0.0.1:3000', options);
-var myClient = makeFailureProxy(rpc,  new LeafB());
+var myClientB = makeFailureProxy(rpc,  'LeafB');
+
+//buffer calls...
+var myClientA = makeFailureProxy(rpc,  'LeafA');
 
 
-myClient.expose({
+rpc.expose({
     'hearMsg': function(author, msg) {
         
         console.log('Received', author, msg);
-        $messages.append('<p><b>' + author + '</b>:' +  msg + '</p>');
+        addMessageFormat(msg, author);
 
     },
     'serverInfo': function(msg) {
-        $messages.append('<p><i>' +  msg + '</i></p>');
+        
+        addMessageFormat(msg, '');
+    
     }
 });
 
-/*
-    EXAMPLES
-*/
+
 
 var speakMsg = function() {
     
@@ -39,28 +35,25 @@ var speakMsg = function() {
     var author = $author.val();
     
     //
-    myClient.rpcCall('sayMsg', [author, msg], function(err, res) {
-        if(err)
-            alert('Could not send message' + err);
-        else
-            $message.val('');
-
+    myClientA.rpcCall('sayMsg', [author, msg], function(err, res) {
+        $message.val('');
     });
 };
 
 var setName = function() {
-    
-    //get the values
-    //var msg = $message.val();
+
     var author = $author.val();
     
     //
-    myClient.rpcCall('setName', [myClient.clientId.toString(), author], function(err, res) {
-        console.log('setting username')
-        if(err)
-            alert('Could not set username' + err);
-        else
+    myClientB.rpcCall('setName', [myClientB.id.toString(), author], function(err, res) {
+
+        if(err){
             $author.val('');
+            //alert('Could not set username' + err);
+            displayGUIAlert('Could not set username' + err)
+        }
+
+            
 
     });
 };

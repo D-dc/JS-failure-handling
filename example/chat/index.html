@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat</title>
-
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    
 </head>
 
 <body>
@@ -12,35 +13,9 @@
 <script type="text/javascript" src="/rpc/bundle.js"></script>
     <script src="handling/reflect.js"></script>
     <script src="handling/nodeHandling.js"></script>
+    <script src="error.js"></script>
     <script type="text/javascript">
 
-var TimeOutError = function (message) {
-    this.name = 'TimeOutError';
-    this.message = (message || '');
-};
-
-TimeOutError.prototype = new Error();
-TimeOutError.prototype.constructor = TimeOutError;
-
-////////
-
-var FunctionNotFoundError = function (message) {
-    this.name = 'FunctionNotFoundError';
-    this.message = (message || '');
-};
-
-FunctionNotFoundError.prototype = new Error();
-FunctionNotFoundError.prototype.constructor = FunctionNotFoundError;
-
-////////
-
-var ExpectedNumberError = function (message) {
-    this.name = 'ExpectedNumberError';
-    this.message = (message || '');
-};
-
-ExpectedNumberError.prototype = new Error();
-ExpectedNumberError.prototype.constructor = ExpectedNumberError;
 
 
 //APPLICATION CODE
@@ -68,16 +43,86 @@ ExpectedNumberError.prototype.constructor = ExpectedNumberError;
 
     </script>
 
-    <h2>Simple chat application</h2>
-    <div class="chat">
-          <div class="chatScreen" style="height:350px;overflow:scroll;"></div>
-          Username:
-          <input type="text" class="author" placeholder="My name" /> <input type="submit" onclick="javascript:setName();" value="Set" /></br>
-          Msg: <input type="text" class="message" placeholder="My message..." /></br>
-          <input type="submit" onclick="javascript:speakMsg();" value="Speak" />
+    <h2>Chat</h2>
+    <div class="col-md-8">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                Simple chat application
+            </div>
+            <div class="panel-body" >
+                <ul class="media-list chatScreen" style="height:350px;overflow:scroll;"></ul>
+            </div>
+            <div class="panel-footer">
+            <div class="alert alert-danger" id="alert" role="alert" style="display:none;"></div>
+
+                <div class="input-group">
+                    <input type="text" id="author" placeholder="My name" />
+                    
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:setName();">Set</button>
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient.close();">Close socket</button>
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient._open();">Open socket</button>
+                </div>
+                <hr />
+                <div class="input-group">
+                    <input type="text" class="form-control" id="message" placeholder="Enter Message" />
+                    <span class="input-group-btn">
+                        <button class="btn btn-info" onclick="javascript:speakMsg();" type="button">Speak</button>
+                    </span>
+                </div>
+            </div>
+        </div>
     </div>
-  <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+
+
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+    var $messages = $('.chatScreen'); // Messages area
+    var $message = $('#message').focus(); // Input message
+    var $author = $('#author'); // Input author
+    var $alert = $('#alert');
+    var $window = $(window);
+
+    $window.keydown(function (event) {
+        if (event.which === 13) {
+            speakMsg();
+        }
+    });
+        
+    var addMessageFormat = function(msg, author){
+        var newMsg = '\
+            <li class="media">\
+                <div class="media-body">\
+                    <div class="media">\
+                        <a class="pull-left" href="#">\
+                            <small class="text-muted">'+author+'</small>\
+                        </a>\
+                        <div class="media-body">\
+                            ' + msg + '\
+                            <br />\
+                           \
+                            <hr />\
+                        </div>\
+                    </div>\
+                </div>\
+            </li>'
+    
+        $messages.append(newMsg);
+
+        $messages.stop().animate({
+            scrollTop: $messages[0].scrollHeight
+        }, 800);
+
+    };
+
+    var displayGUIAlert = function(msg){
+        console.log(msg)
+        $alert.html(msg);
+        $alert.css('display', 'block');
+    };
+    </script>
+  
   <!-- actual code -->
-  <script src="/client.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>
