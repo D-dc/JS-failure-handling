@@ -1,6 +1,13 @@
 'use strict';
-if(typeof exports !== 'undefined')
+
+/*global TimeOutError, FunctionNotFoundError, LeaseExpiredError, NoConnectionError, SerializationError, DeserializionError*/
+var log = function() {};
+
+if(typeof exports !== 'undefined'){
 	var p = require('./reflect.js')
+	require('./logSingleton.js')
+	//var log = require('debug')('log');
+}
 
 
 //works on node v0.12.1
@@ -232,13 +239,6 @@ var HandlerNode = function(){
 	
 HandlerNode.prototype.handleException = function(ctxt, target){
 
-	var self = this;
-
-	ctxt = ctxt || self;
-	target = target || self;
-
-	var err = this.ctxt.callError;
-
 	var nativeErrors = [
 		EvalError, 
 		RangeError, 
@@ -260,11 +260,19 @@ HandlerNode.prototype.handleException = function(ctxt, target){
 		NoConnectionError
 	];
 
-	var checkInvokeHandler = function(handlerMethod){
-		//console.log(target, handlerMethod)
+	var self = this,
+		err = this.ctxt.callError;
+
+	ctxt = ctxt || self;
+	target = target || self;
+
+	var invokeMethod = function(handlerMethod){
+
 		//check if or current node has the handlerMethod, if not call onCatchAll
 		if(target[handlerMethod]){
+			
 			target[handlerMethod].apply(ctxt);	
+		
 		}else{
 
 			if(!target.onException) {
@@ -272,41 +280,45 @@ HandlerNode.prototype.handleException = function(ctxt, target){
 				throw new Error('Need either onException or specific method on' + target);
 			
 			}else{
+				
 				target.onException.apply(ctxt);
+
 			}		
 			
 		}
 		//TODO can perform super() call here	
 			
-	}
+	};
    
 
+	var checkOfErrorType = function(err, errType){
+		return errType.some(function(error){
+						return (err instanceof error);
+					});
+	};
 
-	if(err && nativeErrors.some(function(error){
-						return (err instanceof error);
-					})){
-		checkInvokeHandler('onNativeException');
-	}else if(err && libraryErrors.some(function(error){
-						return (err instanceof error);
-					})){
-		checkInvokeHandler('onLibraryException');
-	}else if(err && networkErrors.some(function(error){
-						return (err instanceof error);
-					})){		
-		checkInvokeHandler('onNetworkException');
+	if(err && checkOfErrorType(err, nativeErrors)){
+		
+		invokeMethod('onNativeException');
+	
+	}else if(err && checkOfErrorType(err, libraryErrors)){
+		
+		invokeMethod('onLibraryException');
+	
+	}else if(err && checkOfErrorType(err, networkErrors)){		
+		
+		invokeMethod('onNetworkException');
+	
 	}else{
-		checkInvokeHandler('onApplicationException');
+		
+		invokeMethod('onApplicationException');
+	
 	}
 };
 
-/*HandlerNode.prototype.super = function(){
-	if(this.parent){
-		this.parent.ctxt = this.ctxt;
-		this.parent.handleException();
-	}
-};*/
 
 //////////////////////////////////////////////////////////////
+//// TopNode: just there to stop handling propagation
 //////////////////////////////////////////////////////////////
 
 var TopNode = function(){
@@ -319,13 +331,13 @@ TopNode.prototype.toString = function(){
 };
 
 TopNode.onException = function(){
-	//throw new Error('Reached top, no handler');
+	//DO NOTHING
 };
 
 
 //////////////////////////////////////////////////////////////
+//// Node1: should retry for network exceptions... todo
 //////////////////////////////////////////////////////////////
-// retry on network exceptions
 var Node1 = function(){
 	console.log('Node1 created');
 };
@@ -368,9 +380,11 @@ Node1.onException = function(){
 };
 
 
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
 
+
+//////////////////////////////////////////////////////////////
+//// Node2: should log all exceptions
+//////////////////////////////////////////////////////////////
 var Node2 = function(){
 	console.log('Node2 created');
 };
@@ -384,21 +398,19 @@ Node2.toString = function(){
 };
 
 Node2.onException = function(){
-	console.log(' Node2 onException', this.ctxt);
-	console.error('RemoteException: ', this.ctxt.callError);
+	this.logger.append('RemoteException: ' + this.ctxt.callError);
 	Node2.super(this);
 };
 
 Node2.onNativeException = function(){
-	console.log(' Node2 onNativeException', this.ctxt);
-	console.error('RemoteException: ', this.ctxt.callError);
-	console.info(this.ctxt.callError.stack);
+	this.logger.append('RemoteException: ' + this.ctxt.callError);
+	this.logger.append(this.ctxt.callError.stack);
 	Node2.super(this);
 };
 
 //////////////////////////////////////////////////////////////
+//// Node3: GUI calls for ApplicationExceptions
 //////////////////////////////////////////////////////////////
-
 var Node3 = function(){
 	console.log('Node3 created');
 };
@@ -423,6 +435,7 @@ Node3.onException = function(){
 
 
 //////////////////////////////////////////////////////////////
+//// Node4: BufferCalls (NetworkException)
 //////////////////////////////////////////////////////////////
 
 var Node4 = function(){
@@ -455,11 +468,14 @@ Node4.onNetworkException = function(){
 
 
 //////////////////////////////////////////////////////////////
+//// LeafA: A particular leaf, generated at run time for each
+////        specific call, contains the state.
 //////////////////////////////////////////////////////////////
 
 //GENERATED
 var LeafA = function(){
 	this.ctxt = null;
+	this.logger = UniqueLogger.getInstance();
 	//put here state from ALL its prototypes!
 };
 LeafA.super = function(target){
@@ -473,25 +489,23 @@ LeafA.prototype.onException = function(){
 
 
 //////////////////////////////////////////////////////////////
+//// Node5: set username, specific (ApplicationException)
 //////////////////////////////////////////////////////////////
 
 
-
-var CallB = function(ctxt){
-	console.log('CallB created'); 
-	this.parent = new Node3();
-	this.ctxt=ctxt;
+var Node5 = function(){
+	console.log('Node5 created'); 
 };
-CallB.prototype = new HandlerNode();
-CallB.prototype.constructor = CallB;
-CallB.toString = function(){
-	return 'CallB';
+Node5.prototype = new HandlerNode();
+Node5.prototype.constructor = Node5;
+Node5.toString = function(){
+	return 'Node5';
 };
-CallB.super = function(target){
+Node5.super = function(target){
 	target.handleException(target, Node3);
 };
-CallB.onApplicationException = function(){
-	console.log(' CallB onApplicationException', this.ctxt);
+Node5.onApplicationException = function(){
+	console.log(' Node5 onApplicationException', this.ctxt);
 
 	if(this.ctxt.callError instanceof UsernameNotAllowedError){
 		var rpcArgs = this.ctxt.thunk.args;
@@ -500,9 +514,8 @@ CallB.onApplicationException = function(){
 		var newName = name+rand;
 		rpcArgs[1][1] =newName;
 		
-		var cb = this.ctxt.getOriginalCb;
+		var cb = this.ctxt.getOriginalCb();
 		rpcArgs[2] = function (err, res){
-			console.log('EEEEEEE', newName)
 			if(!err){
 				$author.val(newName);
 			}
@@ -510,51 +523,46 @@ CallB.onApplicationException = function(){
 		}
 		this.ctxt.retry();
 	}else{
-		CallB.super(this);
+		Node5.super(this);
 	}
-	//1. INVOKING OLD CB
-	//originalCall.invokeCb(originalCall.callError, originalCall.callResult);
-
-	//2. REINITIALIZING COMPLETE CALL
-	//originalCall.retry();
-	// if(!this.ctr) this.ctr=0;
-	// 	this.ctr++;
-	// 	console.log('retrying ', this.ctr);
-		
-		
-	// 	if(this.ctr >= 2){
-	// 		CallB.super(this);
-	// 		this.ctr=0;
-	// 		//debugger
-	// 	} else {
-	// 		this.ctxt.retry();
-	// 	}
-	//3. PROPAGATE TO SUPER
-	//this.super();
-	//this.super(originalCall);
-	
-
 };
 
-CallB.onException = function(){
-	console.log(' CallB onException');
-	CallB.super(this);
+Node5.onException = function(){
+	console.log(' Node5 onException');
+	Node5.super(this);
 };
 
-//////////////////////////////
+//////////////////////////////////////////////////////////////
+//// LeafB: A particular leaf, generated at run time for each
+////        specific call, contains the state.
+//////////////////////////////////////////////////////////////
 
 var LeafB = function(){
 	this.ctxt = null;
+	this.logger = UniqueLogger.getInstance();
 	//put here state from ALL its prototypes!
 };
 LeafB.super = function(target){
-	target.handleException(target, CallB);
+	target.handleException(target, Node5);
 };
-LeafB.prototype = new CallB();
+LeafB.prototype = new Node5();
 LeafB.prototype.onException = function(){
 	console.log('leaf B');
 	LeafB.super(this);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if(typeof exports !== 'undefined'){

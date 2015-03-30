@@ -26,15 +26,12 @@ rpc.expose({
     }
 });
 
-
-
 var speakMsg = function() {
     
     //get the values
     var msg = $message.val();
     var author = $author.val();
     
-    //
     myClientA.rpcCall('sayMsg', [author, msg], function(err, res) {
         $message.val('');
     });
@@ -49,11 +46,6 @@ var setName = function() {
 
         if(err){
             $author.val('');
-            //alert('Could not set username' + err);
-            displayGUIAlert('Could not set username' + err)
         }
-
-            
-
     });
 };

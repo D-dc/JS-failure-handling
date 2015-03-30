@@ -9,39 +9,14 @@
 </head>
 
 <body>
+    <!-- Clientside rpc -->
+    <script type="text/javascript" src="/rpc/bundle.js"></script>
     
-<script type="text/javascript" src="/rpc/bundle.js"></script>
+    <!-- Clientside handling -->
     <script src="handling/reflect.js"></script>
+    <script src="handling/logSingleton.js"></script>
     <script src="handling/nodeHandling.js"></script>
     <script src="error.js"></script>
-    <script type="text/javascript">
-
-
-
-//APPLICATION CODE
-
-// var localVariable = 42;
-
-// var r = new RPC();
-
-
-
-// var handleContextual = function(){
-//     console.log('inside contextual, ', localVariable);
-//     localVariable++;
-// };
-
-// var a = makeFailureProxy(r, new LeafA());//, handleContextual);
-// var b = makeFailureProxy(r,  new LeafB()); 
-
-
-// var counter = 5;
-
-
-
-
-
-    </script>
 
     <h2>Chat</h2>
     <div class="col-md-8">
@@ -59,8 +34,8 @@
                     <input type="text" id="author" placeholder="My name" />
                     
                     <button class="btn btn-primary btn-sm" type="button" onclick="javascript:setName();">Set</button>
-                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient.close();">Close socket</button>
-                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient._open();">Open socket</button>
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:rpc.close();">Close socket</button>
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:rpc._open();">Open socket</button>
                 </div>
                 <hr />
                 <div class="input-group">
@@ -73,10 +48,12 @@
         </div>
     </div>
 
-
+    <!-- GUI -->
     <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
     <script type="text/javascript">
+    'use strict';
+
     var $messages = $('.chatScreen'); // Messages area
     var $message = $('#message').focus(); // Input message
     var $author = $('#author'); // Input author
