@@ -37,6 +37,7 @@ var HtmlNotAllowedError = function (message) {
 HtmlNotAllowedError.prototype = Object.create(Error.prototype);
 HtmlNotAllowedError.prototype.constructor = HtmlNotAllowedError;
 
+
 if(typeof exports !== 'undefined'){
 	global.NoAuthorError = NoAuthorError;
 	global.EmptyMessageError = EmptyMessageError;

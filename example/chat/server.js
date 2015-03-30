@@ -4,9 +4,10 @@ var express = require('express'),
     app = express(),
     serverHttp = require('http').createServer(app),
     ServerRpc = require('rpc'),//require('../../lib/rpc-server.js'),
-    port = process.env.PORT || 3000,
-    h = require('../../nodeHandling.js'),
-    err = require('./error.js');
+    port = process.env.PORT || 3000;
+
+require('../../nodeHandling.js'),
+require('./error.js');
 
 
 serverHttp.listen(port, function() {
