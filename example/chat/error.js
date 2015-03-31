@@ -1,4 +1,4 @@
-
+'use strict';
 
 var NoAuthorError = function (message) {
     this.name = 'NoAuthorError';
@@ -28,19 +28,29 @@ var UsernameNotAllowedError = function (message) {
 UsernameNotAllowedError.prototype = Object.create(Error.prototype);
 UsernameNotAllowedError.prototype.constructor = UsernameNotAllowedError;
 
-var HtmlNotAllowedError = function (message) {
-    this.name = 'HtmlNotAllowedError';
+var ContentNotAllowedError = function (message) {
+    this.name = 'ContentNotAllowedError';
     this.message = (message || '');
     this.stack = (new Error()).stack;
 };
 
-HtmlNotAllowedError.prototype = Object.create(Error.prototype);
-HtmlNotAllowedError.prototype.constructor = HtmlNotAllowedError;
+ContentNotAllowedError.prototype = Object.create(Error.prototype);
+ContentNotAllowedError.prototype.constructor = ContentNotAllowedError;
+
+var MessageBlockedError = function (message) {
+    this.name = 'MessageBlockedError';
+    this.message = (message || '');
+    this.stack = (new Error()).stack;
+};
+
+MessageBlockedError.prototype = Object.create(Error.prototype);
+MessageBlockedError.prototype.constructor = MessageBlockedError;
 
 
 if(typeof exports !== 'undefined'){
 	global.NoAuthorError = NoAuthorError;
 	global.EmptyMessageError = EmptyMessageError;
 	global.UsernameNotAllowedError = UsernameNotAllowedError;
-	global.HtmlNotAllowedError = HtmlNotAllowedError;
+	global.ContentNotAllowedError = ContentNotAllowedError;
+    global.MessageBlockedError = MessageBlockedError;
 }

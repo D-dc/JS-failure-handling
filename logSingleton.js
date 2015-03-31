@@ -37,5 +37,6 @@ LogObject.prototype.printLog = function(){
 	}
 };
 
-
-global.UniqueLogger = UniqueLogger;
+if(typeof exports !== 'undefined'){
+	global.UniqueLogger = UniqueLogger;
+}

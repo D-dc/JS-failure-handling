@@ -14,8 +14,10 @@
     
     <!-- Clientside handling -->
     <script src="handling/reflect.js"></script>
-    <script src="handling/logSingleton.js"></script>
     <script src="handling/nodeHandling.js"></script>
+    <script src="handling/logSingleton.js"></script>
+    <script src="handling/genClientNodes.js"></script>
+
     <script src="error.js"></script>
 
     <h2>Chat</h2>
@@ -34,10 +36,14 @@
                     <input type="text" id="author" placeholder="My name" />
                     
                     <button class="btn btn-primary btn-sm" type="button" onclick="javascript:setName();">Set</button>
-                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:rpc.close();">Close socket</button>
-                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:rpc._open();">Open socket</button>
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient.close();">Close socket</button>
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient._open();">Open socket</button>
+
+                    <input type="text" id="blockUsername" placeholder="user" />
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:blockUser();">Block</button>
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:unblockUser();">Unblock</button>
                 </div>
-                <hr />
+                <div>&nbsp;</div>
                 <div class="input-group">
                     <input type="text" class="form-control" id="message" placeholder="Enter Message" />
                     <span class="input-group-btn">
@@ -58,6 +64,7 @@
     var $message = $('#message').focus(); // Input message
     var $author = $('#author'); // Input author
     var $alert = $('#alert');
+    var $blockUsername = $('#blockUsername');
     var $window = $(window);
 
     $window.keydown(function (event) {
@@ -93,7 +100,7 @@
     };
 
     var displayGUIAlert = function(msg){
-        console.log(msg)
+        
         $alert.html(msg);
         $alert.css('display', 'block');
     };
