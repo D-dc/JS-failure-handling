@@ -45,18 +45,6 @@ Crash must recover
 persistance needed to keep messages after crash failure
 Receiver: Filter,
 
-IDEE: Proxies op voorhand aanmaken,
-max evenveel proxies als handlers, evt minder
-then you can just pick 'right' proxy @ call
-
-Mogelijk om prototype van Proxy handler aan tree te hangen.
-Object met data in onder aan de tree te hangen. Maar probleem om bij het
-omhoog gaan in de chain referentie te behouden naar dat object ('this' staat op the current node)
-dus je moet al zelf een referentie doorgeven
-Nu: Object met originele call, cb(err, res) doorgevens zodat mogelijk:
-  CB op te roepen (vb default success), CB niet meer oproepen op failure,
-  retry ook mogelijk
-Maar dus niet catchallexception function die terug van onderaan begint
 */
 
 // var makeNodeProxy = function(target){
@@ -88,13 +76,32 @@ Maar dus niet catchallexception function die terug van onderaan begint
 // 	return p;
 // };
 
+
+var HandlerManager = function(){
+	console.log('new HandlerManager');
+	this.handledExceptions = {};
+};
+
+HandlerManager.prototype.setHandled = function(handleMethod, byHandler){
+	this.handledExceptions[handleMethod] = byHandler;
+};
+
+HandlerManager.prototype.mayHandle = function(handleMethod, byHandler){
+	if(!byHandler){
+		return !(this.handledExceptions[handleMethod]);
+	}
+
+	return !this.handledExceptions[handleMethod] || this.handledExceptions[handleMethod] === byHandler;
+
+};
+
 var findCb = function(args){
-		for(var i in args){
-			var argument = args[i];
-			if(typeof argument === 'function' && argument.length === 2)
-				return i;
-		}
-	};
+	for(var i in args){
+		var argument = args[i];
+		if(typeof argument === 'function' && argument.length === 2)
+			return i;
+	}
+};
 
 
 var makeFailureProxy = function (target, failureHandler, contextualHandler){
@@ -104,7 +111,7 @@ var makeFailureProxy = function (target, failureHandler, contextualHandler){
 
 		HandlerConstructor = window[failureHandler];
 
-	}else if(typeof global !== 'undefined' && global[failureHandler])	{ //node
+	}else if(typeof global !== 'undefined' && global[failureHandler]){ //node
 
 		HandlerConstructor = global[failureHandler];
 
@@ -117,6 +124,7 @@ var makeFailureProxy = function (target, failureHandler, contextualHandler){
 	var makeContextObject = function(target, args, functionName, cbPosition, callError, callResult, failureHandler){
 		
 		return {
+			handledExceptions: new HandlerManager(),
 			thunk:{
 				target:target,//this,//target !!!! back to proxy
 				args:args,
@@ -125,11 +133,15 @@ var makeFailureProxy = function (target, failureHandler, contextualHandler){
 			callError: callError,
 			callResult: callResult, 
 			getOriginalCb: function(){
+
 				return this.thunk.args[cbPosition];
+
 			},
 			invokeCb: function(err, res){ 
+				
 				var originalCb = this.getOriginalCb();
 				originalCb(err, res);
+
 			},
 			retry: function(){ //retry the whole call
 
@@ -140,10 +152,14 @@ var makeFailureProxy = function (target, failureHandler, contextualHandler){
 				
 			},
 			fail: function(err){ //fail the original cb
+				
 				this.invokeCb(err);
+
 			},
 			succeed: function(res){ //succeed the original cb
+				
 				this.invokeCb(null, res);
+				
 			}
 		};
 	
@@ -239,11 +255,8 @@ var makeFailureProxy = function (target, failureHandler, contextualHandler){
 //////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////
 
-var HandlerNode = function(){};
-	
-HandlerNode.prototype.handleException = function(target){
-	
-	var nativeErrors = [
+var HandlerNode = function(){
+	this.nativeErrors = [
 			EvalError, 
 			RangeError, 
 			ReferenceError, 
@@ -252,54 +265,80 @@ HandlerNode.prototype.handleException = function(target){
 			URIError
 		];
 
-	var libraryErrors = [
+	this.libraryErrors = [
 			FunctionNotFoundError,
 			SerializationError,
 			DeserializionError
 		];
 
-	var networkErrors = [
+	this.networkErrors = [
 			TimeOutError,
 			LeaseExpiredError,
 			NoConnectionError
 		];
+};
 
+HandlerNode.prototype.IsException = function(exceptionType){
+	return this.ctxt.callError instanceof exceptionType;
+};
 	
+HandlerNode.prototype.handleException = function(target){
+
 	var ctxt = this;
+	var self = this;
 	var err = this.ctxt.callError;
 	target = target || this;
 
 	var lookupMethod = function(handlerMethod){
+		console.log(self.ctxt.handledExceptions.handledExceptions);
+		
+		//SPECIFIC EXCEPTIONS: check if or current node has the handlerMethod
+		if(target[handlerMethod] && self.ctxt.handledExceptions.mayHandle(handlerMethod, target)){
+			console.log(target.prototype.toString(), handlerMethod, 'Priority: ', target.flagPriority);
+			
+			//if the priority flag is set, we indicate this so other won't also handle the exception.
+			if(target.flagPriority){
+				console.log('flagPriority set');
+				self.ctxt.handledExceptions.setHandled(handlerMethod, target);
+			} 
 
-		//check if or current node has the handlerMethod, if not call onCatchAll
-		if(target[handlerMethod]){
-			console.log(target.prototype.toString(), handlerMethod);
+			//apply the method
 			target[handlerMethod].apply(ctxt);	
+
+			//call super
+			target.super(ctxt);
+
+			
 		
 		}else{
-
+		//ALL EXCEPTIONS
 			if(!target.onException) {
 				//OnException method is not defined, continue in super.
 				
 				if(!target.super){
-					console.log(target.toString(), 'no handling method found');
+					
+					console.log(target.toString(), 'no handling method found', 'Priority: ', target.flagPriority);
 					//need explicit constructor super method call for leaves
 					target.constructor.super.apply(ctxt, [ctxt]);
+
 				}else{
-					console.log(target.prototype.toString(), 'no handling method found');
+					
+					console.log(target.prototype.toString(), 'no handling method found.', 'Priority: ', target.flagPriority);
 					target.super.apply(ctxt, [ctxt]);
 				
 				}
 
 			}else{
-				console.log(target.prototype.toString(), 'onException');
+
+				console.log(target.prototype.toString(), 'onException', 'Priority: ', target.flagPriority);
 				target.onException.apply(ctxt);
 
+				if(target.super)
+					target.super(ctxt);
 			}		
 			
 		}
-		//TODO can perform super() call here	
-			
+
 	};
    
 
@@ -309,15 +348,15 @@ HandlerNode.prototype.handleException = function(target){
 					});
 	};
 
-	if(err && checkOfErrorType(err, nativeErrors)){
+	if(err && checkOfErrorType(err, this.nativeErrors)){
 		
 		lookupMethod('onNativeException');
 	
-	}else if(err && checkOfErrorType(err, libraryErrors)){
+	}else if(err && checkOfErrorType(err, this.libraryErrors)){
 		
 		lookupMethod('onLibraryException');
 	
-	}else if(err && checkOfErrorType(err, networkErrors)){		
+	}else if(err && checkOfErrorType(err, this.networkErrors)){		
 		
 		lookupMethod('onNetworkException');
 	

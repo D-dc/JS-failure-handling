@@ -37,7 +37,7 @@ var SNode1 = function(){
 SNode1.super = function(target){
 	target.handleException(STopNode);
 };
-SNode1.prototype =  new HandlerNode();
+SNode1.prototype = new HandlerNode();
 SNode1.prototype.constructor = SNode1;
 SNode1.prototype.toString = function(){
 	return ' -SNode1';
@@ -45,14 +45,14 @@ SNode1.prototype.toString = function(){
 
 
 SNode1.onException = function(){
-
-
-	this.logger.append('RemoteException: ' + this.ctxt.callError);
+	var c = this.ctxt.thunk;
+	this.logger.append('Call: '+c.funcName+' with args '+c.args+' RemoteException: ' + this.ctxt.callError);
 	SNode1.super(this);
 };
 
 SNode1.onNativeException = function(){
-	this.logger.append('RemoteException: ' + this.ctxt.callError);
+	var c = this.ctxt.thunk;
+	this.logger.append('Call: '+c.funcName+' with args '+c.args+' RemoteException: ' + this.ctxt.callError);
 	this.logger.append(this.ctxt.callError.stack);
 	SNode1.super(this);
 };
@@ -76,10 +76,10 @@ SNode2.prototype.toString = function(){
 };
 
 SNode2.onApplicationException = function(){
-	this.ctxt.invokeCb('aaa', 'aaa')
-	this.ctxt.invokeCb('aaa', 'aaa')
-	if(this.ctxt.callError instanceof MessageBlockedError){
-
+	// this.ctxt.invokeCb('aaa', 'aaa')
+	// this.ctxt.invokeCb('aaa', 'aaa')
+	if(this.IsException(MessageBlockedError)){
+		//this.ctxt.target[funcName]('serverInfo', [])
 	}
 	SNode2.super(this);
 };
@@ -175,13 +175,6 @@ SLeafB.prototype.constructor = SLeafB;
 SLeafB.prototype.toString = function(){
 	return 'SLeafB';
 };
-
-
-
-
-
-
-
 
 
 

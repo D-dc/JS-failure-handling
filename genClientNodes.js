@@ -11,6 +11,7 @@
 var CTopNode = function(){
 	console.log('CTopNode created');
 };
+CTopNode.flagPriority = false;
 CTopNode.prototype = new HandlerNode();
 CTopNode.prototype.constructor = CTopNode;
 CTopNode.prototype.toString = function(){
@@ -31,6 +32,7 @@ var CNode1 = function(){
 CNode1.super = function(target){
 	target.handleException(CTopNode);
 };
+CNode1.flagPriority = false;
 CNode1.prototype =  new HandlerNode();
 CNode1.prototype.constructor = CNode1;
 CNode1.prototype.toString = function(){
@@ -39,29 +41,27 @@ CNode1.prototype.toString = function(){
 
 
 CNode1.onNetworkException = function(){
-	var self = this;
+		var self = this;
 
 	if(!this.ctr) this.ctr=0;
-		this.ctr++;
-		console.log('retrying ', this.ctr);
 		
+	this.ctr++;
+	console.log('retrying ', this.ctr);
+	
+	
+	if(this.ctr >= 3){
+		//CNode1.super(this);
+		this.ctr=0;
+		//debugger
+	} else {
 		
-		if(this.ctr >= 3){
-			CNode1.super(this);
-			this.ctr=0;
-			//debugger
-		} else {
-			
-			setTimeout(function (){
-				self.ctxt.retry();
-			}, 2000);
-		}
-
+		setTimeout(function (){
+			self.ctxt.retry();
+		}, 2000);
+	}
 };
 
-CNode1.onException = function(){
-	CNode1.super(this);
-};
+
 
 
 
@@ -75,6 +75,7 @@ var CNode2 = function(){
 CNode2.super = function(target){
 	target.handleException(CNode1);
 };
+CNode2.flagPriority = false;
 CNode2.prototype =  new HandlerNode();
 CNode2.prototype.constructor = CNode2;
 CNode2.prototype.toString = function(){
@@ -82,15 +83,16 @@ CNode2.prototype.toString = function(){
 };
 
 CNode2.onException = function(){
-
-	this.logger.append('RemoteException: ' + this.ctxt.callError);
-	CNode2.super(this);
+	var c = this.ctxt.thunk;
+	this.logger.append('Call: '+c.funcName+' with args '+c.args+' RemoteException: ' + this.ctxt.callError);
+	// CNode2.super(this);
 };
 
 CNode2.onNativeException = function(){
-	this.logger.append('RemoteException: ' + this.ctxt.callError);
+	var c = this.ctxt.thunk;
+	this.logger.append('Call: '+c.funcName+' with args '+c.args+' RemoteException: ' + this.ctxt.callError);
 	this.logger.append(this.ctxt.callError.stack);
-	CNode2.super(this);
+	// CNode2.super(this);
 };
 
 //////////////////////////////////////////////////////////////
@@ -102,6 +104,7 @@ var CNode3 = function(){
 CNode3.super = function(target){
 	target.handleException(CNode2);
 };
+CNode3.flagPriority = false;
 CNode3.prototype =  new HandlerNode();
 CNode3.prototype.constructor = CNode3;
 CNode3.prototype.toString = function(){
@@ -111,7 +114,7 @@ CNode3.prototype.toString = function(){
 CNode3.onApplicationException = function(){
 	var error = this.ctxt.callError;
 	displayGUIAlert(error.message);
-	CNode3.super(this);
+	// CNode3.super(this);
 };
 // CNode3.onException = function(){
 // 	console.log('leaf A');
@@ -129,6 +132,7 @@ var CNode4 = function(){
 CNode4.super = function(target){
 	target.handleException(CNode3);
 };
+CNode4.flagPriority = true;
 CNode4.prototype =  new HandlerNode();
 CNode4.prototype.constructor = CNode4;
 CNode4.prototype.toString = function(){
@@ -136,14 +140,19 @@ CNode4.prototype.toString = function(){
 };
 
 CNode4.onNetworkException = function(){
-	var self = this;
-	// var stub = this.ctxt.thunk.target;
-	// stub.once('connect', function (){
-	// 	self.ctxt.retry();
-	// });
-	//todo remove retry if callback gets executed anyway
+	
 
-	CNode4.super(this);
+
+	var self = this;
+	var stub = this.ctxt.thunk.target;
+	stub.once('connect', function (){
+		self.ctxt.retry();
+	});
+	//todo remove retry if callback gets executed anyway	
+
+	
+		
+	// CNode5.super(this);
 };
 
 
@@ -161,6 +170,7 @@ var CNode5 = function(){
 CNode5.super = function(target){
 	target.handleException(CNode3);
 };
+CNode5.flagPriority = false;
 CNode5.prototype =  new HandlerNode();
 CNode5.prototype.constructor = CNode5;
 CNode5.prototype.toString = function(){
@@ -168,8 +178,7 @@ CNode5.prototype.toString = function(){
 };
 
 CNode5.onApplicationException = function(){
-
-	if(this.ctxt.callError instanceof UsernameNotAllowedError){
+	if(this.IsException(UsernameNotAllowedError)){
 		var rpcArgs = this.ctxt.thunk.args;
 		var name = rpcArgs[1][1];
 		var rand = Math.floor((Math.random() * 100) + 1);
@@ -184,15 +193,12 @@ CNode5.onApplicationException = function(){
 			cb(err, res)
 		}
 		this.ctxt.retry();
-	}else{
-		CNode5.super(this);
 	}
+
+	
+	
 };
 
-// CNode5.onException = function(){
-// 	console.log(' CNode5 onException');
-// 	CNode5.super(this);
-// };
 
 //////////////////////////////////////////////////////////////
 //// CLeafA: A particular leaf, generated at run time for each
