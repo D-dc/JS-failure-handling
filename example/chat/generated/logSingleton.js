@@ -5,11 +5,11 @@
 
 var UniqueLogger = (function () {
 	var instance;
-	 
+
 	function createInstance() {
 		return new LogObject();
 	};
-	 
+
 	return {
 		getInstance: function () {
 			if (!instance) {
@@ -20,23 +20,23 @@ var UniqueLogger = (function () {
 	};
 })();
 
-var LogObject = function(){
+var LogObject = function () {
 	this.textLog = [];
 };
 
-LogObject.prototype.append = function(newData){
-	
+LogObject.prototype.append = function (newData) {
+
 	this.textLog.push(newData);
 
 };
 
-LogObject.prototype.printLog = function(){
-	
+LogObject.prototype.printLog = function () {
+
 	for (var i in this.textLog) {
-	    console.log(this.textLog[i]);
+		console.log(this.textLog[i]);
 	}
 };
 
-if(typeof exports !== 'undefined'){
+if (typeof exports !== 'undefined') {
 	global.UniqueLogger = UniqueLogger;
 }

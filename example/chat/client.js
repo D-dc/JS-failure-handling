@@ -3,74 +3,72 @@
 /*global TimeOutError, FunctionNotFoundError, LeaseExpiredError, NoConnectionError, SerializationError, DeserializionError*/
 
 
-var options =  {
+var options = {
     defaultRpcTimeout: Infinity,
     leaseRenewOnExpire: true
 };
 
 var myClient = new ClientRpc('http://127.0.0.1:3000', options);
-
+var fp = makeFailureProxy(adapter);
 
 //buffer calls...
-var myClientA = makeFailureProxy(myClient,  'CLeafA');
-var myClientB = makeFailureProxy(myClient,  'CLeafB');
+var myClientA = fp(myClient, 'CLeafA');
+var myClientB = fp(myClient, 'CLeafB');
 
 
-var blockedUsers = {};
-var name;//todo
+///////////////////////////////////////////////////////////////////////
+
+//var blockedUsers = {};
+//var clientId = myClient.id;
 
 myClient.expose({
-    'hearMsg': function(author, msg) {
-        
-        console.log('Received', author, msg);
-        if(blockedUsers[author])
-            throw new MessageBlockedError('User ' + $author.val() + ' blocked your message.');
-        
-        addMessageFormat(msg, author);
+    'addChatMessage': function (author, msg) {
+
+        // if (blockedUsers[author])
+        //     throw new MessageBlockedError('User blocked your message.');
+
+        formatMessageDOM(msg, author);
 
     },
-    'serverInfoMsg': function(msg) {
-        
-        addMessageFormat(msg, '');
-    
+    'addInformationMessage': function (msg) {
+
+        formatMessageDOM(msg, '');
+
     }
 });
 
-var speakMsg = function() {
-    
+var speakMsg = function () {
+
     //get the values
     var msg = $message.val();
-    var author = $author.val();
-    
-    myClientA.rpc('sayMsg', [author, msg], function(err, res) {
+
+    myClientA.rpc('newChatMsg', [myClient.id, msg], function (err, res) {
         $message.val('');
     });
 };
 
-var setName = function() {
+var setName = function () {
 
     var author = $author.val();
-    
-    //
-    myClientB.rpc('setName', [myClientB.id.toString(), author], function(err, res) {
 
-        if(err){
-            $author.val('');
-        }
+    //
+    myClientB.rpc('setName', [myClient.id, author], function (err, res) {
+
+        $author.val('');
+
     });
 };
 
+//////////////////////////////////
+// var blockUser = function () {
 
+//     var user = $blockUsername.val();
+//     blockedUsers[user] = true;
 
-var blockUser = function(){
+// };
 
-    var user = $blockUsername.val();
-    blockedUsers[user] = true;
-    console.log('blockuser', user)
-};
+// var unblockUser = function () {
+//     var user = $blockUsername.val();
+//     delete blockedUsers[user];
 
-var unblockUser = function(){
-    var user = $blockUsername.val();
-    delete blockedUsers[user];
-    console.log('unblockuser', user)
-};
+// };

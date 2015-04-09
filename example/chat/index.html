@@ -14,9 +14,11 @@
     
     <!-- Clientside handling -->
     <script src="handling/reflect.js"></script>
+    <script src="handling/RpcLibAdapter.js"></script>
     <script src="handling/nodeHandling.js"></script>
-    <script src="handling/logSingleton.js"></script>
-    <script src="handling/genClientNodes.js"></script>
+    <script src="generated/bufferSingleton.js"></script>
+    <script src="generated/logSingleton.js"></script>
+    <script src="generated/genClientNodes.js"></script>
 
     <script src="error.js"></script>
 
@@ -36,12 +38,13 @@
                     <input type="text" id="author" placeholder="My name" />
                     
                     <button class="btn btn-primary btn-sm" type="button" onclick="javascript:setName();">Set</button>
-                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient.close();">Close socket</button>
+                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient._close();">Close socket</button>
                     <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient._open();">Open socket</button>
-
+                    <!--
                     <input type="text" id="blockUsername" placeholder="user" />
                     <button class="btn btn-primary btn-sm" type="button" onclick="javascript:blockUser();">Block</button>
                     <button class="btn btn-primary btn-sm" type="button" onclick="javascript:unblockUser();">Unblock</button>
+                    -->
                 </div>
                 <div>&nbsp;</div>
                 <div class="input-group">
@@ -73,7 +76,7 @@
         }
     });
         
-    var addMessageFormat = function(msg, author){
+    var formatMessageDOM = function(msg, author){
         var newMsg = '\
             <li class="media">\
                 <div class="media-body">\
