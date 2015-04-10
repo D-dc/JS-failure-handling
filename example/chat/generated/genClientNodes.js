@@ -79,7 +79,7 @@ CNode2.onNetworkException = function () {
 	// });
 
 	buffer.bufferCall(function (continuation) {
-		console.log('retry call');
+		console.log('1. retry call');
 		self.ctxt.retry(continuation);
 	});
 
@@ -180,7 +180,7 @@ CNode5.onApplicationException = function () {
 		var originalArgs = this.ctxt.callArgs();
 		var newName;
 		var name = originalArgs[1];
-		if (name === 'test') {
+		if (name === 'test') { //for debug
 			newName = 'test0';
 		} else {
 			var rand = Math.floor((Math.random() * 100) + 1);
@@ -196,7 +196,7 @@ CNode5.onApplicationException = function () {
 		// 	}
 		// 	cb(err, res)
 		// };
-		console.log('alternate call');
+		console.log('alternate call', originalArgs);
 		this.ctxt.alternateCall(this.ctxt.callName, originalArgs);
 	}
 };

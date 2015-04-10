@@ -50,7 +50,7 @@
 		{
 			var setName = function () {
 				var author = readDOM('author');
-				setName(myClientB.id.toString(), author)
+				setName(myClientB.id.toString(), author);
 				printDOM('author', '');
 			};
 		}
@@ -71,7 +71,7 @@
 			addChatMessage(findUsername(client), message);
 		};
 
-		/*Use-handler:+tryOnce*/
+		/*Use-handler:+TryOnce*/ //'+' means it has priority.
 		{
 			var setName = function (client, name) {
 
@@ -93,6 +93,7 @@
 				usernames[name] = client;
 			};
 
+			//TODO
 			myServer.onConnection(function (clientSocket) {
 				addInformationMessage('new client joined ' + clientSocket.id.toString() + '.');
 
@@ -111,17 +112,48 @@
 
 /*define-handler:Log*/
 {
-	//is pre-defined
+	//Would be predefined but otherwise would look like this:
+	var Log = {
+		buffer: UniqueBuffer.getInstance(), //will come in leaf constructor after transpile.
+		//'onException' will only be called if there is no other handling method was called in this handler already.
+		onException: function (call) { //call will change to this.ctxt after transpile.
+			this.logger.append('RPC CALL: ' + call.callName + ' ARGS: ' + call.callArgs() + ' ERROR: ' + call.callError);
+		},
+		//if we a 'NativeException', we will not call 'onException' afterwards.
+		onNativeException: function (call) { //call will change to this.ctxt after transpile.
+
+			this.logger.append('RPC CALL: ' + call.callName + ' ARGS ' + call.callArgs() + ' ERROR: ' + call.callError);
+			this.logger.append(call.callError.stack);
+		}
+	}
 }
 
 /*define-handler:Buffer*/
 {
-	//is pre-defined
+	//Would be predefined but otherwise would look like this:
+	var Buffer = {
+		buffer: UniqueBuffer.getInstance(), //will come in leaf constructor after transpile.
+		//only capture 'NetworkException' in this handler.
+		onNetworkException: function (call) { //call will change to this.ctxt after transpile.
+			var buffer = this.buffer;
+
+			buffer.bufferCall(function (continuation) {
+				//this 'retry' method takes into account retransmissions on the callee side.
+				//hence, if the original call did succeed (but we did not get the result because of Omission failure),
+				//the callee will notice and not perform the computation again.
+				call.retry(continuation);
+			});
+
+			buffer.installFlush(call.stub);
+		}
+	}
 }
 
 /*define-handler:Application*/
 {
+	//Custom programmer defined.
 	var Application = {
+		//only capture 'ApplicationException' in this handler.
 		onApplicationException: function (call) {
 			//The 'call argument pretends to know about the return values.'
 			var error = call.callError;
@@ -132,9 +164,12 @@
 
 /*define-handler:RetryUsername*/
 {
+	//Custom programmer defined.
+	//changes the author arg in: setName(myClient, author); if we get the 'UsernameNotAllowedError' exception.
 	var RetryUsername = {
+		//only capture 'ApplicationException' in this handler.
 		onApplicationException: function (call) {
-			if (call.isOf(UsernameNotAllowedError)) {
+			if (call.isOf(UsernameNotAllowedError)) { //filter ApplicationException of this kind.
 				var originalArgs = call.callArgs;
 
 				var name = originalArgs[1];
@@ -145,4 +180,16 @@
 			}
 		}
 	};
+}
+
+/*define-handler:TryOnce*/
+{
+	//Would be predefined but otherwise would look like this:
+	var TryOnce = {
+		//only capture 'NetworkException' in this handler.
+		onNetworkException: function () {
+			//Since this handler gets executed when the call failed, we do not bother retrying. 
+			//This handling should be executed on non-important calls with TryOnce semantics.
+		}
+	}
 }

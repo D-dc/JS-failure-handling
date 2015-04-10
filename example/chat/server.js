@@ -94,7 +94,9 @@ myServer.expose({
         //ApplicationErrors
         if (!name) throw new ContentNotAllowedError('No empty username allowed.');
         if (containsHtml(client) || containsHtml(name)) throw new ContentNotAllowedError('No HTML allowed in username.');
+        //just for debugging atm.
         if (name === 'test' || name === 'test0' || (usernames[name] && usernames[name] !== client)) throw new UsernameNotAllowedError(name + ' is already in use.');
+
 
         var oldName = findUsername(client);
         var msg;

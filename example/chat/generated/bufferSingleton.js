@@ -44,7 +44,7 @@ BufferSingleton.prototype.flushBuffer = function () {
 
 	thunk(function (originalCb) {
 		return function (err, res, retry) {
-			console.log('got result', err, res);
+			console.log('2. got result', err, res);
 
 			originalCb(err, res, retry);
 			buffer.splice(0, 1);
