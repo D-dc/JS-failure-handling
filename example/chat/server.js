@@ -37,8 +37,8 @@ var options = {
 var myServer = new ServerRpc(serverHttp, options);
 var fp = makeFailureProxy(adapter);
 
-var myServerA = fp(myServer, 'SLeafA');
-var myServerB = fp(myServer, 'SLeafB');
+var myServerA = fp(myServer, SLeafA);
+var myServerB = fp(myServer, SLeafB);
 
 ///////////////////////////////////////////////////////////////////////
 var usernames = {};

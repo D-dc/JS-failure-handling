@@ -12,8 +12,8 @@ var myClient = new ClientRpc('http://127.0.0.1:3000', options);
 var fp = makeFailureProxy(adapter);
 
 //buffer calls...
-var myClientA = fp(myClient, 'CLeafA');
-var myClientB = fp(myClient, 'CLeafB');
+var myClientA = fp(myClient, CLeafA);
+var myClientB = fp(myClient, CLeafB);
 
 
 ///////////////////////////////////////////////////////////////////////

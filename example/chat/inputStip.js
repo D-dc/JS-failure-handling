@@ -137,14 +137,11 @@
 		onNetworkException: function (call) { //call will change to this.ctxt after transpile.
 			var buffer = this.buffer;
 
-			buffer.bufferCall(function (continuation) {
-				//this 'retry' method takes into account retransmissions on the callee side.
-				//hence, if the original call did succeed (but we did not get the result because of Omission failure),
-				//the callee will notice and not perform the computation again.
-				call.retry(continuation);
-			});
+			//this takes into account retransmissions on the callee side.
+			//hence, if the original call did succeed (but we did not get the result because of Omission failure),
+			//the callee will notice and not perform the computation again.
+			buffer.bufferCall(this.ctxt);
 
-			buffer.installFlush(call.stub);
 		}
 	}
 }

@@ -71,20 +71,9 @@ CNode2.prototype.toString = function () {
 
 
 CNode2.onNetworkException = function () {
-	var self = this;
 	var buffer = this.buffer;
 
-	// this.ctxt.stub.onceConnected(function () {
-	// 	self.ctxt.retry();
-	// });
-
-	buffer.bufferCall(function (continuation) {
-		console.log('1. retry call');
-		self.ctxt.retry(continuation);
-	});
-
-	// buffer.bufferCall(this.ctxt.thunk);
-	buffer.installFlush(this.ctxt.stub); //todo;
+	buffer.bufferCall(this.ctxt);
 };
 
 
@@ -159,23 +148,6 @@ CNode5.prototype.toString = function () {
 
 CNode5.onApplicationException = function () {
 	if (this.IsException(UsernameNotAllowedError)) {
-		// var rpcArgs = this.ctxt.thunk.args;
-		// var name = rpcArgs[1][1];
-		// var rand = Math.floor((Math.random() * 100) + 1);
-		// var newName = name + rand;
-		// rpcArgs[1][1] = newName;
-
-		// var cb = this.ctxt.getOriginalCb();
-		// rpcArgs[2] = function (err, res) {
-		// 	if (!err) {
-		// 		$author.val(newName);
-		// 	}
-		// 	cb(err, res)
-		// };
-		// console.log('alternate call');
-		// this.ctxt.alternateCall();
-
-		console.log('alternative call', this.ctxt.toString());
 
 		var originalArgs = this.ctxt.callArgs();
 		var newName;
@@ -188,15 +160,6 @@ CNode5.onApplicationException = function () {
 		}
 
 		originalArgs[1] = newName;
-
-		// var cb = this.ctxt.getOriginalCb();
-		// rpcArgs[2] = function (err, res) {
-		// 	if (!err) {
-		// 		$author.val(newName);
-		// 	}
-		// 	cb(err, res)
-		// };
-		console.log('alternate call', originalArgs);
 		this.ctxt.alternateCall(this.ctxt.callName, originalArgs);
 	}
 };
