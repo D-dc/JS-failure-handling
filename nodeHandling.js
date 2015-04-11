@@ -139,7 +139,7 @@ var makeFailureProxy = function (stubAdapter) {
 						toString: function () {
 							return 'RPCCALL: ' + this.callName + ' ' + this.callArgs() + ' ' + this.callError + ' ' + this.callResult + ' \n STUB: ' + this.stubCall.methodName;
 						},
-						handledExceptions: new HandlerManager(),
+						_handledExceptions: new HandlerManager(),
 
 						// info about the stub call: target.methodName(methodArgs)
 						stub: proxy, //target !!!! back to proxy
@@ -167,39 +167,38 @@ var makeFailureProxy = function (stubAdapter) {
 						//RETRY: We retry the ORIGINAL call, same args. (Takes into account omission failures, callee side-effects)
 						retry: function (continuation) {
 							var self = this;
-							var retry = this.callRetry;
-							if (retry) {
-								console.log('retr from lib', this.toString());
-								// return retry(function (originalCB) {
-								// 	return function (err, res, retry) {
-								// 		//SHOULD DO RETRY
-								// self.callError = err;
-								// self.callResult = res;
-								// self.callRetry = retry;
-								// 		originalCB(err, res, retry);
-								// 	};
-								// }); //library defined retry
-								return retry(continuation);
-							}
-
+							this._doOnHandlingFinished(function () {
+								console.log('performing retry')
+								var retry = self.callRetry;
+								if (retry) {
+									console.log('retr from lib', self.toString());
+									return retry(continuation);
+								}
+							});
 						},
 
 						//Perform a different call
 						alternateCall: function (newCallName, newCallArgs, continuation) {
-							var stubCall = this.stubCall;
-							var newMethodArgs = stubAdapter.buildNewRpcArgs(newCallName, newCallArgs, continuation);
-							var newArgs = installHandler(proxy, proxyTarget, newMethodArgs, proxyMethodName, failureHandler); //currentHandler);
-							//Directly on the proxyTarget, we already intercepted the args to use 'currentHandler' again.
-							proxyTarget[stubCall.methodName].apply(proxyTarget, newArgs);
+							var self = this;
+							this._doOnHandlingFinished(function () {
+								console.log('performing alternateCall');
+								var stubCall = self.stubCall;
+								var newMethodArgs = stubAdapter.buildNewRpcArgs(newCallName, newCallArgs, continuation);
+								var newArgs = installHandler(proxy, proxyTarget, newMethodArgs, proxyMethodName, failureHandler); //currentHandler);
+								//Directly on the proxyTarget, we already intercepted the args to use 'currentHandler' again.
+								proxyTarget[stubCall.methodName].apply(proxyTarget, newArgs);
+							});
 						},
 
 						//Invoke the callback (e.g. for giving default return values)
 						continue: function (err, res, retry) {
-							var originalCb = this._getOriginalCb();
-							var newArgs = stubAdapter.buildNewCbArgs(err, res, retry);
+							var self = this;
+							this._doOnHandlingFinished(function () {
+								var originalCb = self._getOriginalCb();
+								var newArgs = stubAdapter.buildNewCbArgs(err, res, retry);
 
-							originalCb.apply(this.stub, newArgs);
-
+								originalCb.apply(self.stub, newArgs);
+							});
 						},
 
 						//Continue the continuation as failed
@@ -214,6 +213,17 @@ var makeFailureProxy = function (stubAdapter) {
 
 							this.continue(null, res);
 
+						},
+						_onFinished: [],
+						_doOnHandlingFinished: function (continuation) {
+							this._onFinished.push(continuation);
+						},
+						_onFinishedHandling: function () {
+							for (var i in this._onFinished) {
+								this._onFinished[i]();
+							}
+							console.log('handling finished');
+							//this._onFinished[]; not needed as ctxt is only used once.
 						}
 					};
 
@@ -310,16 +320,16 @@ HandlerNode.prototype.handleException = function (target) {
 	target = target || this;
 
 	var lookupMethod = function (handlerMethod) {
-		//console.log(self.ctxt.handledExceptions.handledExceptions);
+		//console.log(self.ctxt._handledExceptions.handledExceptions);
 
 		//SPECIFIC EXCEPTIONS: check if or current node has the handlerMethod
-		if (target[handlerMethod] && self.ctxt.handledExceptions.mayHandle(handlerMethod, target)) {
+		if (target[handlerMethod] && self.ctxt._handledExceptions.mayHandle(handlerMethod, target)) {
 			console.log(target.prototype.toString(), handlerMethod, 'Priority: ', target.flagPriority);
 
 			//if the priority flag is set, we indicate this so other won't also handle the exception.
 			if (target.flagPriority) {
 				console.log('flagPriority set');
-				self.ctxt.handledExceptions.setHandled(handlerMethod, target);
+				self.ctxt._handledExceptions.setHandled(handlerMethod, target);
 			}
 
 			//apply the method
@@ -335,7 +345,7 @@ HandlerNode.prototype.handleException = function (target) {
 
 				if (!target.super) {
 
-					console.log(target.toString(), 'no handling method found.', 'Priority: ', target.flagPriority);
+					console.log(target.toString(), 'no handling method found', 'Priority: ', target.flagPriority);
 					//need explicit constructor super method call for leaves
 					target.constructor.super.apply(ctxt, [ctxt]);
 
@@ -351,8 +361,11 @@ HandlerNode.prototype.handleException = function (target) {
 				console.log(target.prototype.toString(), 'onException', 'Priority: ', target.flagPriority);
 				target.onException.apply(ctxt);
 
-				if (target.super)
+				if (target.super) {
 					target.super(ctxt);
+				} else {
+					self.ctxt._onFinishedHandling();
+				}
 			}
 
 		}

@@ -71,7 +71,7 @@
 			addChatMessage(findUsername(client), message);
 		};
 
-		/*Use-handler:+TryOnce*/ //'+' means it has priority.
+		/*Use-handler:+TryOnce*/ //'+' means it has priority, hence here if tryonce handler is used, the Buffer handler will not be used.9o
 		{
 			var setName = function (client, name) {
 
