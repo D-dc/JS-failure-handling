@@ -64,11 +64,8 @@
     'use strict';
 
     var $messages = $('.chatScreen'); // Messages area
-    var $message = $('#message').focus(); // Input message
-    var $author = $('#author'); // Input author
-    var $alert = $('#alert');
-    var $blockUsername = $('#blockUsername');
     var $window = $(window);
+    $('#author').focus();
 
     $window.keydown(function (event) {
         if (event.which === 13) {
@@ -92,7 +89,7 @@
                         </div>\
                     </div>\
                 </div>\
-            </li>'
+            </li>';
     
         $messages.append(newMsg);
 
@@ -102,11 +99,6 @@
 
     };
 
-    var displayGUIAlert = function(msg){
-        
-        $alert.html(msg);
-        $alert.css('display', 'block');
-    };
     </script>
   
   <!-- actual code -->

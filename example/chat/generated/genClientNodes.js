@@ -95,7 +95,8 @@ CNode3.prototype.toString = function () {
 
 CNode3.onApplicationException = function () {
 	var error = this.ctxt.callError;
-	displayGUIAlert(error.message);
+	$('#alert').html(error.message);
+	$('#alert').css('display', 'block');
 };
 
 
@@ -150,16 +151,16 @@ CNode5.onApplicationException = function () {
 	if (this.IsException(UsernameNotAllowedError)) {
 
 		var originalArgs = this.ctxt.callArgs();
+		console.log('callArgs', originalArgs)
 		var newName;
 		var name = originalArgs[1];
 		if (name === 'test') { //for debug
-			newName = 'test0';
+			originalArgs[1] = 'test0';
 		} else {
 			var rand = Math.floor((Math.random() * 100) + 1);
-			newName = name + rand;
+			originalArgs[1] = name + rand;
 		}
 
-		originalArgs[1] = newName;
 		this.ctxt.alternateCall(this.ctxt.callName, originalArgs);
 	}
 };

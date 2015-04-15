@@ -6,14 +6,10 @@
 var UniqueLogger = (function () {
 	var instance;
 
-	function createInstance() {
-		return new LogObject();
-	};
-
 	return {
 		getInstance: function () {
 			if (!instance) {
-				instance = createInstance();
+				instance = new LogObject();
 			}
 			return instance;
 		}
@@ -36,6 +32,7 @@ LogObject.prototype.printLog = function () {
 		console.log(this.textLog[i]);
 	}
 };
+
 
 if (typeof exports !== 'undefined') {
 	global.UniqueLogger = UniqueLogger;

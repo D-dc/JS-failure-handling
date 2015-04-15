@@ -19,18 +19,16 @@
 		return false;
 	};
 
-	var containsHtml = function (v) {
-		var r = new RegExp('<([A-Za-z][A-Za-z0-9]*)\\b[^>]*>(.*?)</\\1>');
-		return r.test(v);
-	};
-
 	var formatMessageDOM = function (msg, author) {
-		//...
+		// just JQuery GUI stuff...
 	};
 
 	/*@Client*/
 	/*Use-handler:Buffer,Application*/
 	{
+		var id = RANDOMID();
+		var username;
+
 		var addChatMessage = function (author, msg) {
 			formatMessageDOM(msg, author);
 		};
@@ -39,19 +37,18 @@
 			formatMessageDOM(msg, '');
 		};
 
-
 		var speakMsg = function () {
-			var msg = readDOM('message');
-			newChatMsg(myClientB.id.toString(), msg);
-			printDOM('message', '');
+			var msg = $('#message').val();
+			newChatMsg(id, msg);
+			$('#message').val('');
 		};
 
 		/*Use-handler:RetryUsername*/
 		{
 			var setName = function () {
-				var author = readDOM('author');
-				setName(myClientB.id.toString(), author);
-				printDOM('author', '');
+				var author = $('#author').val();
+				username = setName(id, author);
+				$('#author').val('');
 			};
 		}
 
@@ -65,7 +62,6 @@
 
 			if (!client || !findUsername(client)) throw new NoAuthorError('Message is missing an author.');
 			if (!message) throw new EmptyMessageError('Empty messages are not allowed.');
-			if (containsHtml(client) || containsHtml(message)) throw new ContentNotAllowedError('No HTML allowed in username or message.');
 
 			//broadcast
 			addChatMessage(findUsername(client), message);
@@ -76,32 +72,34 @@
 			var setName = function (client, name) {
 
 				if (!name) throw new ContentNotAllowedError('No empty username allowed.');
-				if (containsHtml(client) || containsHtml(name)) throw new ContentNotAllowedError('No HTML allowed in username.');
-				if (name === 'test' || (usernames[name] && usernames[name] !== client)) throw new UsernameNotAllowedError(name + ' is already in use.');
+				if (usernames[name] && usernames[name] !== client) throw new UsernameNotAllowedError(name + ' is already in use.');
 
 				var oldName = findUsername(client);
 				var msg;
 
-				if (oldName) {
+				if (!oldName) {
+					msg = name + ' joined.';
+				} else {
 					deleteById(client);
 					msg = oldName + ' is now known as ' + name + '.';
-				} else {
-					msg = client + ' is now known as ' + name + '.';
 				}
 
 				addInformationMessage(msg);
 				usernames[name] = client;
+
+				return name;
 			};
 
-			//TODO
-			myServer.onConnection(function (clientSocket) {
-				addInformationMessage('new client joined ' + clientSocket.id.toString() + '.');
+			//Nice to be able to do something like this:
 
-				clientSocket.onDisconnected(function () {
-					addInformationMessage('client ' + findUsername(clientSocket.id) + ' left.');
-				});
+			// myServer.onConnection(function (clientSocket) {
+			// 	addInformationMessage('new client joined ' + clientSocket.id.toString() + '.');
 
-			});
+			// 	clientSocket.onDisconnected(function () {
+			// 		addInformationMessage('client ' + findUsername(clientSocket.id) + ' left.');
+			// 	});
+
+			// });
 		}
 	}
 
@@ -154,7 +152,8 @@
 		onApplicationException: function (call) {
 			//The 'call argument pretends to know about the return values.'
 			var error = call.callError;
-			displayGUIAlert(error.message);
+			$('#alert').html(error.message);
+			$('#alert').css('display', 'block');
 		}
 	};
 }
@@ -170,9 +169,9 @@
 				var originalArgs = call.callArgs;
 
 				var name = originalArgs[1];
-				var newName = name + Math.floor((Math.random() * 100) + 1);
-				originalArgs[1] = newName;
+				originalArgs[1] = name + Math.floor((Math.random() * 100) + 1);
 
+				//perform another call with same name (call.callName) but changed call arguments.
 				call.alternateCall(call.callName, originalArgs);
 			}
 		}

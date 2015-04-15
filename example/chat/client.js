@@ -15,60 +15,42 @@ var fp = makeFailureProxy(adapter);
 var myClientA = fp(myClient, CLeafA);
 var myClientB = fp(myClient, CLeafB);
 
+var random = function () {
+    return Math.floor((Math.random() * 10000) + 1);
+};
+
 
 ///////////////////////////////////////////////////////////////////////
+var username;
 
-//var blockedUsers = {};
-//var clientId = myClient.id;
 
 myClient.expose({
     'addChatMessage': function (author, msg) {
-
-        // if (blockedUsers[author])
-        //     throw new MessageBlockedError('User blocked your message.');
-
         formatMessageDOM(msg, author);
-
     },
     'addInformationMessage': function (msg) {
-
         formatMessageDOM(msg, '');
-
     }
 });
 
+var id = random();
+
 var speakMsg = function () {
 
-    //get the values
-    var msg = $message.val();
+    var msg = $('#message').val();
 
-    myClientA.rpc('newChatMsg', [myClient.id, msg], function (err, res) {
-        $message.val('');
+    myClientA.rpc('newChatMsg', [id, msg], function (err, res) {
+        $('#message').val('');
     });
 };
 
 var setName = function () {
 
-    var author = $author.val();
+    var author = $('#author').val();
 
-    //
-    myClientB.rpc('setName', [myClient.id, author], function (err, res) {
-
-        $author.val('');
+    myClientB.rpc('setName', [id, author], function (err, res) {
+        username = res;
+        $('#author').val('');
 
     });
 };
-
-//////////////////////////////////
-// var blockUser = function () {
-
-//     var user = $blockUsername.val();
-//     blockedUsers[user] = true;
-
-// };
-
-// var unblockUser = function () {
-//     var user = $blockUsername.val();
-//     delete blockedUsers[user];
-
-// };

@@ -81,14 +81,14 @@ FailureHandler.prototype.install = function (proxy, proxyMethodArgs, proxyMethod
 
 		var rpcError = stubAdapter.getContinuationError(arguments),
 			rpcResult = stubAdapter.getContinuationResult(arguments),
-			rpcRetry = stubAdapter.getContinuationRetry(arguments);
+			rpcRetry = stubAdapter.getContinuationRetry(arguments),
+			newArgs = savedArgs.slice(),
+			originalCb = stubAdapter.getRpcContinuation(newArgs);
 
 		if (!rpcError) {
 			//We have a result, no error.
 			self._resolve(rpcResult);
-
-			console.log('Normal result!');
-			return oldCb(rpcError, rpcResult); //just execute original callback.
+			return originalCb(rpcError, rpcResult); //just execute original callback.
 		}
 
 		//either we get an existing failureLeaf (e.g. retry performed), 
@@ -100,13 +100,13 @@ FailureHandler.prototype.install = function (proxy, proxyMethodArgs, proxyMethod
 
 			//start with a new handler
 			failureLeaf = new self.handlerLeafConstructor();
-			var newArgs = savedArgs.slice();
+			//var newArgs = savedArgs.slice();
 
 			//Make sure the original CB gets only invoked once per handler!
 			stubAdapter.setRpcContinuation(newArgs, function (invoked, oldCb) {
 				return function () {
 					var err = stubAdapter.getContinuationError(arguments),
-						res = stubAdapter.getContinuationError(arguments);
+						res = stubAdapter.getContinuationResult(arguments);
 
 					if (!invoked) {
 						invoked = true;
@@ -123,7 +123,7 @@ FailureHandler.prototype.install = function (proxy, proxyMethodArgs, proxyMethod
 		}
 
 		//We make a new Context object every time we start a handling sequence (tree walk).
-		failureLeaf.ctxt = self.makeContextObject(proxy, savedArgs, proxyMethodArgs, proxyMethodName, rpcError, rpcResult, rpcRetry, failureLeaf);
+		failureLeaf.ctxt = self.makeContextObject(proxy, argsForContext, proxyMethodArgs, proxyMethodName, rpcError, rpcResult, rpcRetry, failureLeaf);
 
 		console.log(failureLeaf.ctxt.toString());
 		return failureLeaf.handleException();
@@ -169,7 +169,7 @@ FailureHandler.prototype.makeContextObject = function (proxy, savedArgs, proxyMe
 		//RETRY: We retry the ORIGINAL call, same args. (Takes into account omission failures, callee side-effects)
 		retry: function (continuation) {
 			var self = this;
-			console.log('performing retry now', this);
+
 			this._doOnHandlingFinished(function () {
 				console.log('performing retry now', this);
 				var retry = self.callRetry;
@@ -184,6 +184,11 @@ FailureHandler.prototype.makeContextObject = function (proxy, savedArgs, proxyMe
 			var self = this;
 			this._doOnHandlingFinished(function () {
 				var stubCall = self.stubCall;
+				if (!continuation)
+					continuation = stubAdapter.getRpcContinuation(stubCall.methodArgs());
+
+				console.log('continuation,', continuation)
+
 				var newMethodArgs = stubAdapter.buildNewRpcArgs(newCallName, newCallArgs, continuation);
 				var newArgs = handlerMaker.install(proxy, newMethodArgs, proxyMethodName, failureLeaf);
 				//Directly on the proxyTarget, we already intercepted the args to use 'currentHandler' again.

@@ -58,59 +58,43 @@ var findUsername = function (id) {
     return false;
 };
 
-var containsHtml = function (v) {
-    var r = new RegExp('<([A-Za-z][A-Za-z0-9]*)\\b[^>]*>(.*?)</\\1>');
-    return r.test(v);
-};
-
 
 ///////////////////////////////////////////////////////////////////////
 
-myServer.onConnection(function (clientSocket) {
-
-    myServerB.rpc('addInformationMessage', ['new client joined ' + clientSocket.id.toString() + '.']);
-
-    clientSocket.onDisconnected(function () {
-        myServerB.rpc('addInformationMessage', ['client ' + findUsername(clientSocket.id) + ' left.']);
-    });
-
-});
-
-
 
 myServer.expose({
-    'newChatMsg': function (client, message) {
+    'newChatMsg': function (user, message) {
 
         //ApplicationErrors
-        if (!client || !findUsername(client)) throw new NoAuthorError('Message is missing an author.');
+        if (!user || !findUsername(user)) throw new NoAuthorError('Message is missing an author.');
         if (!message) throw new EmptyMessageError('Empty messages are not allowed.');
-        if (containsHtml(client) || containsHtml(message)) throw new ContentNotAllowedError('No HTML allowed in username or message.');
 
         //broadcast
-        myServerA.rpc('addChatMessage', [findUsername(client), message], function () {});
+        myServerA.rpc('addChatMessage', [findUsername(user), message], function () {});
     },
     'setName': function (client, name) {
 
         //ApplicationErrors
         if (!name) throw new ContentNotAllowedError('No empty username allowed.');
-        if (containsHtml(client) || containsHtml(name)) throw new ContentNotAllowedError('No HTML allowed in username.');
         //just for debugging atm.
         if (name === 'test' || name === 'test0' || (usernames[name] && usernames[name] !== client)) throw new UsernameNotAllowedError(name + ' is already in use.');
 
 
         var oldName = findUsername(client);
         var msg;
-        if (oldName) {
+
+        if (!oldName) {
+            msg = name + ' joined.';
+        } else {
             deleteById(client);
             msg = oldName + ' is now known as ' + name + '.';
-        } else {
-            msg = client + ' is now known as ' + name + '.';
         }
 
         //broadcast
         myServerB.rpc('addInformationMessage', [msg]);
-
         usernames[name] = client;
+
+        return name;
 
     }
 });

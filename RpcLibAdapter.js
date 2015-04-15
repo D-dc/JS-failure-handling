@@ -63,17 +63,16 @@ var adapter = {
 	},
 	buildNewRpcArgs: function (functionName, args, continuation) {
 		var newArgs = [];
-		continuation = continuation || function () {};
 		newArgs[this.stubRPCFunctionNamePosition] = functionName;
 		newArgs[this.stubRPCArgsPosition] = args;
 		newArgs[this.stubRPCContinuationPosition] = continuation;
 		return newArgs;
 	},
 	buildNewCbArgs: function (err, res, retry) {
-		var newArgs =[];
-		newArgs[this.continuationErrorPosition] =err;
-		newArgs[this.continuationResultPosition] =res;
-		newArgs[this.continuationRetryPosition] =retry;
+		var newArgs = [];
+		newArgs[this.continuationErrorPosition] = err;
+		newArgs[this.continuationResultPosition] = res;
+		newArgs[this.continuationRetryPosition] = retry;
 
 	}
 };
