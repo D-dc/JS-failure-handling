@@ -1,6 +1,6 @@
 'use strict';
 
-/*Use-handler:Log*/
+/*@useHandler Log*/
 {
 	var usernames = {};
 
@@ -24,7 +24,7 @@
 	};
 
 	/*@Client*/
-	/*Use-handler:Buffer,Application*/
+	/*@useHandler Buffer,Application*/
 	{
 		var id = RANDOMID();
 		var username;
@@ -43,7 +43,7 @@
 			$('#message').val('');
 		};
 
-		/*Use-handler:RetryUsername*/
+		/*@useHandler RetryUsername*/
 		{
 			var setName = function () {
 				var author = $('#author').val();
@@ -55,7 +55,7 @@
 	}
 
 	/*@Server*/
-	/*Use-handler:Buffer*/
+	/*@useHandler Buffer*/
 	{
 
 		var newChatMsg = function (client, message) {
@@ -67,7 +67,7 @@
 			addChatMessage(findUsername(client), message);
 		};
 
-		/*Use-handler:+TryOnce*/ //'+' means it has priority, hence here if tryonce handler is used, the Buffer handler will not be used.9o
+		/*@useHandler +TryOnce*/ //'+' means it has priority, hence here if tryonce handler is used, the Buffer handler will not be used.9o
 		{
 			var setName = function (client, name) {
 
@@ -108,11 +108,11 @@
 
 //////////////////////////////////////////
 
-/*define-handler:Log*/
+/*@define-handler:Log*/
 {
 	//Would be predefined but otherwise would look like this:
 	var Log = {
-		buffer: UniqueBuffer.getInstance(), //will come in leaf constructor after transpile.
+		logger: UniqueLogger.getInstance(), //will come in leaf constructor after transpile.
 		//'onException' will only be called if there is no other handling method was called in this handler already.
 		onException: function (call) { //call will change to this.ctxt after transpile.
 			this.logger.append('RPC CALL: ' + call.callName + ' ARGS: ' + call.callArgs() + ' ERROR: ' + call.callError);
@@ -126,7 +126,7 @@
 	}
 }
 
-/*define-handler:Buffer*/
+/*@define-handler:Buffer*/
 {
 	//Would be predefined but otherwise would look like this:
 	var Buffer = {
@@ -144,7 +144,7 @@
 	}
 }
 
-/*define-handler:Application*/
+/*@define-handler:Application*/
 {
 	//Custom programmer defined.
 	var Application = {
@@ -158,7 +158,7 @@
 	};
 }
 
-/*define-handler:RetryUsername*/
+/*@define-handler:RetryUsername*/
 {
 	//Custom programmer defined.
 	//changes the author arg in: setName(myClient, author); if we get the 'UsernameNotAllowedError' exception.
@@ -178,7 +178,7 @@
 	};
 }
 
-/*define-handler:TryOnce*/
+/*@define-handler:TryOnce*/
 {
 	//Would be predefined but otherwise would look like this:
 	var TryOnce = {

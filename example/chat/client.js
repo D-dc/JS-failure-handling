@@ -9,11 +9,11 @@ var options = {
 };
 
 var myClient = new ClientRpc('http://127.0.0.1:3000', options);
-var fp = makeFailureProxy(adapter);
+var fp = makeFailureProxy(myClient, adapter);
 
 //buffer calls...
-var myClientA = fp(myClient, CLeafA);
-var myClientB = fp(myClient, CLeafB);
+var myClientA = fp(CLeafA);
+var myClientB = fp(CLeafB);
 
 var random = function () {
     return Math.floor((Math.random() * 10000) + 1);

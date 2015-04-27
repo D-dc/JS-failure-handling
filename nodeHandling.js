@@ -15,37 +15,6 @@ var noOp = function () {};
 /*global TimeOutError, FunctionNotFoundError, LeaseExpiredError, NoConnectionError, SerializationError, DeserializionError*/
 
 
-/*
-EXPLICIT MESSAGE PASSING.
-
-* Maybe:
-No retransmission
-May or may not be received
-(Omission failures, crash failures)
-=> Just do no failure handling
-
-* At-least-once:
-If no ack, retransmit msg,
-retransmission not filtered
-NO crash failure (0 deliveries then)
-Operation can be invoked more than once
-=> can use DUE to retransmit msg
-=> if DueExceptionError, retransmit
-
-* At-most-once:
-retransmit if no ack,
-receiver filter duplicates (vb ctr).
-Masks omissions, still crash failures
-=> again DUE
-
-* Exact-once:
-Crash must recover
-persistance needed to keep messages after crash failure
-Receiver: Filter,
-
-*/
-
-
 var HandlerManager = function () {
 	this.handledExceptions = {};
 };
@@ -63,26 +32,26 @@ HandlerManager.prototype.mayHandle = function (handleMethod, byHandler) {
 };
 
 var FailureHandler = function (stubAdapter, handlerLeafConstructor, proxyTarget) {
-	this.stubAdapter = stubAdapter;
-	this.proxyTarget = proxyTarget;
+	this.stubAdapter            = stubAdapter;
+	this.proxyTarget            = proxyTarget;
 	this.handlerLeafConstructor = handlerLeafConstructor;
-	this._onResolved = [];
+	this._onResolved            = [];
 };
 
 FailureHandler.prototype.install = function (proxy, proxyMethodArgs, proxyMethodName, failureLeaf) {
 	var self = this,
 		stubAdapter = this.stubAdapter,
-		oldCb = stubAdapter.getRpcContinuation(proxyMethodArgs),
-		savedArgs = proxyMethodArgs.slice();
+		oldCb       = stubAdapter.getRpcContinuation(proxyMethodArgs),
+		savedArgs   = proxyMethodArgs.slice();
 
 	//intercept callback arguments and use handler if 'error' argument is set.
 	stubAdapter.setRpcContinuation(proxyMethodArgs, function () {
 		console.log('--> Proxy failure handler.', stubAdapter.getRpcFunctionName(proxyMethodArgs), stubAdapter.getRpcArgs(proxyMethodArgs));
 
 		var rpcError = stubAdapter.getContinuationError(arguments),
-			rpcResult = stubAdapter.getContinuationResult(arguments),
-			rpcRetry = stubAdapter.getContinuationRetry(arguments),
-			newArgs = savedArgs.slice(),
+			rpcResult  = stubAdapter.getContinuationResult(arguments),
+			rpcRetry   = stubAdapter.getContinuationRetry(arguments),
+			newArgs    = savedArgs.slice(),
 			originalCb = stubAdapter.getRpcContinuation(newArgs);
 
 		if (!rpcError) {
@@ -159,9 +128,9 @@ FailureHandler.prototype.makeContextObject = function (proxy, savedArgs, proxyMe
 		callArgs: function () {
 			return rpcArgs.slice();
 		},
-		callError: rpcError,
-		callResult: rpcResult,
-		callRetry: rpcRetry,
+		callError:      rpcError,
+		callResult:     rpcResult,
+		callRetry:      rpcRetry,
 		_getOriginalCb: function () {
 			return stubAdapter.getRpcContinuation(this.stubCall.methodArgs());
 		},
@@ -187,10 +156,10 @@ FailureHandler.prototype.makeContextObject = function (proxy, savedArgs, proxyMe
 				if (!continuation)
 					continuation = stubAdapter.getRpcContinuation(stubCall.methodArgs());
 
-				console.log('continuation,', continuation)
+				console.log('continuation,', continuation);
 
 				var newMethodArgs = stubAdapter.buildNewRpcArgs(newCallName, newCallArgs, continuation);
-				var newArgs = handlerMaker.install(proxy, newMethodArgs, proxyMethodName, failureLeaf);
+				var newArgs       = handlerMaker.install(proxy, newMethodArgs, proxyMethodName, failureLeaf);
 				//Directly on the proxyTarget, we already intercepted the args to use 'currentHandler' again.
 				var proxyTarget = handlerMaker.proxyTarget;
 				proxyTarget[stubCall.methodName].apply(proxyTarget, newArgs);
@@ -221,8 +190,8 @@ FailureHandler.prototype.makeContextObject = function (proxy, savedArgs, proxyMe
 			this.continue(null, res);
 
 		},
-		_isFinished: false,
-		_onFinished: [],
+		_isFinished:   false,
+		_onFinished:   [],
 		_doOnResolved: function (continuation) {
 			handlerMaker._doOnResolved(continuation);
 		},
@@ -262,9 +231,9 @@ FailureHandler.prototype._resolve = function (outcome) {
 };
 
 
-var makeFailureProxy = function (stubAdapter) {
+var makeFailureProxy = function (target, stubAdapter) {
 
-	return function (target, HandlerConstructor) {
+	return function (HandlerConstructor) {
 
 		var proxyHandler = Object.create({});
 		proxyHandler.get = function (proxyTarget, proxyMethodName) {
@@ -277,7 +246,7 @@ var makeFailureProxy = function (stubAdapter) {
 						proxyMethodArgs.push(noOp);
 					}
 
-					var handler = new FailureHandler(stubAdapter, HandlerConstructor, proxyTarget);
+					var handler         = new FailureHandler(stubAdapter, HandlerConstructor, proxyTarget);
 					var interceptedArgs = handler.install(this, proxyMethodArgs, proxyMethodName);
 					return proxyTarget[proxyMethodName].apply(this, interceptedArgs);
 
@@ -327,8 +296,8 @@ HandlerNode.prototype.handleException = function (target) {
 
 	var ctxt = this;
 	var self = this;
-	var err = this.ctxt.callError;
-	target = target || this;
+	var err  = this.ctxt.callError;
+	target   = target || this;
 
 	var lookupMethod = function (handlerMethod) {
 
@@ -411,5 +380,5 @@ HandlerNode.prototype.handleException = function (target) {
 
 if (typeof exports !== 'undefined') {
 	global.makeFailureProxy = makeFailureProxy;
-	global.HandlerNode = HandlerNode;
+	global.HandlerNode      = HandlerNode;
 }
