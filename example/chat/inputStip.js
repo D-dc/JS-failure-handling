@@ -165,7 +165,7 @@
 	var RetryUsername = {
 		//only capture 'ApplicationException' in this handler.
 		onApplicationException: function (call) {
-			if (call.isOf(UsernameNotAllowedError)) { //filter ApplicationException of this kind.
+			if (call.isCallErrorType(UsernameNotAllowedError)) { //filter ApplicationException of this kind.
 				var originalArgs = call.callArgs;
 
 				var name = originalArgs[1];

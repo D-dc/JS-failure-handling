@@ -38,13 +38,12 @@
                     <input type="text" id="author" placeholder="My name" />
                     
                     <button class="btn btn-primary btn-sm" type="button" onclick="javascript:setName();">Set</button>
+                    
                     <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient._close();">Close socket</button>
+                    
                     <button class="btn btn-primary btn-sm" type="button" onclick="javascript:myClient._open();">Open socket</button>
-                    <!--
-                    <input type="text" id="blockUsername" placeholder="user" />
-                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:blockUser();">Block</button>
-                    <button class="btn btn-primary btn-sm" type="button" onclick="javascript:unblockUser();">Unblock</button>
-                    -->
+                    
+                    <button class="btn btn-error btn-sm" type="button" onclick="javascript:crashClient()">Crash Client</button>
                 </div>
                 <div>&nbsp;</div>
                 <div class="input-group">
@@ -62,6 +61,10 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
     <script type="text/javascript">
     'use strict';
+
+    var crashClient = function(){
+        while(true){};
+    }
 
     var $messages = $('.chatScreen'); // Messages area
     var $window = $(window);

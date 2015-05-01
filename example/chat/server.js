@@ -5,19 +5,13 @@
 
 var express = require('express'),
     app = express(),
-    serverHttp = require('http').createServer(app),
-    ServerRpc = require('../../../RPCT/index.js'),
-    port = process.env.PORT || 3000;
+    ServerRpc = require('../../../RPCT/index.js');
 
 require('../../nodeHandling.js'),
-    require('./generated/genServerNodes.js'),
-    require('./error.js');
+require('./generated/genServerNodes.js'),
+require('./error.js');
 
 var adapter = require('../../RpcLibAdapter.js');
-
-serverHttp.listen(port, function () {
-    console.log('Server listening at port %d', port);
-});
 
 app.use('/rpc', express.static(__dirname + '/../../../RPCT/client/'));
 app.use('/handling', express.static(__dirname + '/../../'));
@@ -29,12 +23,13 @@ app.use('/', express.static(__dirname + '/'));
 
 
 var options = {
-    pingTimeout: 30000, //client2server
+    pingTimeout: 8000,
     pingInterval: 6000,
     defaultRpcTimeout: Infinity
 };
 
-var myServer = new ServerRpc(serverHttp, options);
+var myServer = new ServerRpc(app, 3000, options);
+
 var fp = makeFailureProxy(myServer, adapter);
 
 var myServerA = fp(SLeafA);

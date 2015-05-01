@@ -6,23 +6,6 @@
 /*global TimeOutError, FunctionNotFoundError, LeaseExpiredError, NoConnectionError, SerializationError, DeserializionError*/
 
 
-//////////////////////////////////////////////////////////////
-//// CTopNode: just there to stop handling propagation.
-//////////////////////////////////////////////////////////////
-
-var CTopNode = function () {
-	console.log('CTopNode created');
-};
-CTopNode.flagPriority = false;
-CTopNode.prototype = new HandlerNode();
-CTopNode.prototype.constructor = CTopNode;
-CTopNode.prototype.toString = function () {
-	return ' -CTopNode';
-};
-
-CTopNode.onException = function () {
-	//DO NOTHING
-};
 
 
 //////////////////////////////////////////////////////////////
@@ -31,9 +14,7 @@ CTopNode.onException = function () {
 var CNode1 = function () {
 	console.log('CNode1 created');
 };
-CNode1.super = function (target) {
-	target.handleException(CTopNode);
-};
+
 CNode1.flagPriority = false;
 CNode1.prototype = new HandlerNode();
 CNode1.prototype.constructor = CNode1;
@@ -148,7 +129,7 @@ CNode5.prototype.toString = function () {
 };
 
 CNode5.onApplicationException = function () {
-	if (this.IsException(UsernameNotAllowedError)) {
+	if (this.ctxt.isCallErrorType(UsernameNotAllowedError)) {
 
 		var originalArgs = this.ctxt.callArgs();
 		console.log('callArgs', originalArgs)

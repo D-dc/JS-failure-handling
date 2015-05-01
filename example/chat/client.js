@@ -1,11 +1,10 @@
 'use strict';
 
-/*global TimeOutError, FunctionNotFoundError, LeaseExpiredError, NoConnectionError, SerializationError, DeserializionError*/
+/*global TimeOutError, FunctionNotFoundError, NoConnectionError, SerializationError, DeserializionError*/
 
 
 var options = {
-    defaultRpcTimeout: Infinity,
-    leaseRenewOnExpire: true
+    reconnection: true
 };
 
 var myClient = new ClientRpc('http://127.0.0.1:3000', options);

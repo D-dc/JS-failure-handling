@@ -11,33 +11,12 @@ require('./logSingleton.js');
 require('../../../nodeHandling.js');
 
 
-//////////////////////////////////////////////////////////////
-//// STopNode: just there to stop handling propagation.
-//////////////////////////////////////////////////////////////
-
-var STopNode = function () {
-	console.log('STopNode created');
-};
-STopNode.flagPriority = false;
-STopNode.prototype = new HandlerNode();
-STopNode.prototype.constructor = STopNode;
-STopNode.prototype.toString = function () {
-	return ' -STopNode';
-};
-
-STopNode.onException = function () {
-	//DO NOTHING
-};
-
 
 //////////////////////////////////////////////////////////////
 //// SNode1: Log exceptions
 //////////////////////////////////////////////////////////////
 var SNode1 = function () {
 	console.log('SNode1 created');
-};
-SNode1.super = function (target) {
-	target.handleException(STopNode);
 };
 SNode1.flagPriority = false;
 SNode1.prototype = new HandlerNode();
