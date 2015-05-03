@@ -90,6 +90,4 @@ var adapter = {
 	}
 };
 
-if (typeof exports !== 'undefined') {
-	module.exports = adapter;
-}
+module.exports = adapter;

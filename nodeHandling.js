@@ -1,9 +1,12 @@
 'use strict';
 
-if (typeof exports !== 'undefined') {
-	require('./reflect.js');
-}
 
+require('./reflect.js');
+var debug = require('debug')('handler'),
+	adapter = require('./RpcLibAdapter.js');
+
+require('./logSingleton.js');
+require('./bufferSingleton.js');
 
 
 //works on node v0.12.1
@@ -52,7 +55,7 @@ var NodeHandling = (function () {
 
 		//intercept callback arguments and use handler if 'error' argument is set.
 		stubAdapter.setRpcContinuation(proxyMethodArgs, function () {
-			console.log('--> Proxy failure handler.', stubAdapter.getRpcFunctionName(proxyMethodArgs), stubAdapter.getRpcArgs(proxyMethodArgs));
+			debug('--> Proxy failure handler.', stubAdapter.getRpcFunctionName(proxyMethodArgs), stubAdapter.getRpcArgs(proxyMethodArgs));
 
 			var rpcError = stubAdapter.getContinuationError(arguments),
 				rpcResult  = stubAdapter.getContinuationResult(arguments),
@@ -71,7 +74,7 @@ var NodeHandling = (function () {
 			var argsForContext = savedArgs;
 
 			if (!failureLeaf) {
-				console.log('NEW Handler');
+				debug('NEW Handler');
 
 				//start with a new handler
 				failureLeaf = new self.handlerLeafConstructor();
@@ -87,14 +90,14 @@ var NodeHandling = (function () {
 							invoked = true;
 							oldCb(err, res);
 						} else {
-							console.log('-> call suppressed');
+							debug('-> call suppressed');
 						}
 					};
 				}(false, stubAdapter.getRpcContinuation(newArgs)));
 
 				argsForContext = newArgs;
 			} else {
-				console.log('REUSE Handler');
+				debug('REUSE Handler');
 			}
 
 			//We make a new Context object every time we start a handling sequence (tree walk).
@@ -148,7 +151,7 @@ var NodeHandling = (function () {
 				var self = this;
 
 				this._doOnHandlingFinished(function () {
-					console.log('performing retry now', this);
+					debug('Performing retry now', this);
 					var retry = self.callRetry;
 					if (retry) {
 						return retry(continuation);
@@ -164,7 +167,7 @@ var NodeHandling = (function () {
 					if (!continuation)
 						continuation = stubAdapter.getRpcContinuation(stubCall.methodArgs());
 
-					console.log('continuation,', continuation);
+					debug('continuation,', continuation);
 
 					var newMethodArgs = stubAdapter.buildNewRpcArgs(newCallName, newCallArgs, continuation);
 					var newArgs       = handlerMaker.install(proxy, newMethodArgs, proxyMethodName, failureLeaf);
@@ -211,7 +214,7 @@ var NodeHandling = (function () {
 			},
 			_handlingFinished: function () {
 				this._isFinished = true;
-				console.log('-- Single handler tree walk finished');
+				debug('-- Single handler tree walk finished');
 				if (this._onFinished.length === 0)
 					return handlerMaker._resolve(this.callError);
 
@@ -234,7 +237,7 @@ var NodeHandling = (function () {
 	};
 
 	FailureHandler.prototype._resolve = function (outcome) {
-		console.log('-- Entire Handling finished', outcome);
+		debug('-- Entire Handling finished', outcome);
 		for (var i in this._onResolved) {
 			this._onResolved[i](outcome);
 		}
@@ -252,7 +255,7 @@ var NodeHandling = (function () {
 
 /* Make a proxy for the target stub, taking an adaptor and the constructor of the first handler.*/
 var makeFailureProxy = function (target, stubAdapter) {
-
+	stubAdapter = stubAdapter || adapter;
 	return function (HandlerConstructor) {
 
 		var proxyHandler = Object.create({});
@@ -318,6 +321,8 @@ HandlerNode.prototype.handleException = function (target) {
 
 	var lookupMethod = function (handlerMethod) {
 
+		var calledSuper =  false;
+
 		//SPECIFIC EXCEPTIONS: check if or current node has the handlerMethod
 		if (target[handlerMethod] && self.ctxt._handledExceptions.mayHandle(handlerMethod, target)) {
 			console.log(target.prototype.toString(), handlerMethod, 'Priority: ', target.flagPriority);
@@ -330,8 +335,11 @@ HandlerNode.prototype.handleException = function (target) {
 			//apply the method
 			target[handlerMethod].apply(ctxt);
 
-			//call super
-			target.super(ctxt);
+			if (target.super) {
+				target.super(ctxt);
+				calledSuper = true;
+			} 
+
 
 		} else {
 			//ALL EXCEPTIONS
@@ -342,12 +350,17 @@ HandlerNode.prototype.handleException = function (target) {
 
 					console.log(target.toString(), 'no handling method found', 'Priority: ', target.flagPriority);
 					//need explicit constructor super method call for leaves
-					target.constructor.super.apply(ctxt, [ctxt]);
+					if(target.constructor.super){
+						target.constructor.super.apply(ctxt, [ctxt]);
+						calledSuper = true;
+					} 
 
 				} else {
 
 					console.log(target.prototype.toString(), 'no handling method found.', 'Priority: ', target.flagPriority);
+					
 					target.super.apply(ctxt, [ctxt]);
+					calledSuper = true;
 
 				}
 
@@ -355,14 +368,18 @@ HandlerNode.prototype.handleException = function (target) {
 
 				console.log(target.prototype.toString(), 'onException', 'Priority: ', target.flagPriority);
 				target.onException.apply(ctxt);
-
 				if (target.super) {
 					target.super(ctxt);
-				} else {
-					//We went through the entire handling tree.
-					self.ctxt._handlingFinished();
+					calledSuper = true;
 				}
+
 			}
+		}
+
+		if (!calledSuper) {
+			debug('FINISHED')
+			//We went through the entire handling tree.
+			self.ctxt._handlingFinished();
 		}
 	};
 
@@ -393,7 +410,5 @@ HandlerNode.prototype.handleException = function (target) {
 };
 
 
-if (typeof exports !== 'undefined') {
-	global.makeFailureProxy = makeFailureProxy;
-	global.HandlerNode      = HandlerNode;
-}
+global.makeFailureProxy = makeFailureProxy;
+global.HandlerNode      = HandlerNode;

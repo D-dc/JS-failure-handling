@@ -1,5 +1,6 @@
 'use strict';
 
+var debug = require('debug')('handler buffer');
 
 var UniqueBuffer = (function () {
 	var instance;
@@ -28,7 +29,7 @@ var BufferSingleton = function () {
 BufferSingleton.prototype.bufferCall = function (call) {
 
 	this.buffer.push(call);
-	console.log('buffer', this.buffer.length);
+	debug('Buffer call', call, '. Calls buffered: ', this.buffer.length);
 
 	this.installFlush(call.stub);
 };
@@ -36,6 +37,8 @@ BufferSingleton.prototype.bufferCall = function (call) {
 BufferSingleton.prototype.flushBuffer = function () {
 	var self = this;
 	var buffer = this.buffer;
+
+	debug('Flush buffer', buffer, this.waitForResult);
 	if (!buffer.length) {
 		this.flushInstalled = false;
 		return;
@@ -44,7 +47,7 @@ BufferSingleton.prototype.flushBuffer = function () {
 	if (this.waitForResult) return;
 	this.waitForResult = true;
 
-	var thunk = buffer.splice(0, 1)[0];
+	var thunk = buffer.shift();
 
 	//only continue with next call if the previous is entirely finished.
 	thunk._doOnResolved(function () {
@@ -62,11 +65,8 @@ BufferSingleton.prototype.installFlush = function (stub) {
 	this.flushInstalled = true;
 
 	stub.onceConnected(function () {
-		console.log('Start flushing buffer');
 		self.flushBuffer();
 	});
 };
 
-if (typeof exports !== 'undefined') {
-	global.UniqueBuffer = UniqueBuffer;
-}
+global.UniqueBuffer = UniqueBuffer;

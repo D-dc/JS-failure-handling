@@ -1,7 +1,6 @@
 'use strict';
 
-//////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////
+var debug = require('debug')('handler logger');
 
 var UniqueLogger = (function () {
 	var instance;
@@ -21,7 +20,7 @@ var LogObject = function () {
 };
 
 LogObject.prototype.append = function (newData) {
-
+	debug('Logging', newData);
 	this.textLog.push(newData);
 
 };
@@ -34,6 +33,4 @@ LogObject.prototype.printLog = function () {
 };
 
 
-if (typeof exports !== 'undefined') {
-	global.UniqueLogger = UniqueLogger;
-}
+global.UniqueLogger = UniqueLogger;

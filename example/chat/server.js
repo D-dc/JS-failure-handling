@@ -11,11 +11,11 @@ require('../../nodeHandling.js'),
 require('./generated/genServerNodes.js'),
 require('./error.js');
 
-var adapter = require('../../RpcLibAdapter.js');
 
 app.use('/rpc', express.static(__dirname + '/../../../RPCT/client/'));
 app.use('/handling', express.static(__dirname + '/../../'));
 app.use('/', express.static(__dirname + '/'));
+app.use('/generated', express.static(__dirname + '/../../'));
 
 
 
@@ -30,7 +30,7 @@ var options = {
 
 var myServer = new ServerRpc(app, 3000, options);
 
-var fp = makeFailureProxy(myServer, adapter);
+var fp = makeFailureProxy(myServer);
 
 var myServerA = fp(SLeafA);
 var myServerB = fp(SLeafB);

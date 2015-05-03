@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sample</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+    
+</head>
+
+<body>
+    <!-- Clientside rpc -->
+    <script type="text/javascript" src="/rpc/bundle.js"></script>
+    
+    <!-- Clientside handling -->
+    <script type="text/javascript" src="/handling/client/bundle.js"></script>
+
+
+    <h2>Sample</h2>
+    
+
+    <!-- GUI -->
+
+    <script type="text/javascript">
+    'use strict';
+
+   var client = new ClientRpc('http://127.0.0.1:3000');
+var fp = makeFailureProxy(client);
+{
+    var Buffer3 = function () {
+    };
+    Buffer3.flagPriority = false;
+    Buffer3.prototype = new HandlerNode();
+    Buffer3.prototype.constructor = Buffer3;
+    Buffer3.prototype.toString = function () {
+        return ' -Buffer3';
+    };
+    Buffer3.onNetworkException = function () {
+        var buffer = this.Bufferbuffer;
+        buffer.bufferCall(this.ctxt);
+    };
+}
+{
+    var Log4 = function () {
+    };
+    Log4.super = function (target) {
+        target.handleException(Buffer3);
+    };
+    Log4.flagPriority = false;
+    Log4.prototype = new HandlerNode();
+    Log4.prototype.constructor = Log4;
+    Log4.prototype.toString = function () {
+        return ' -Log4';
+    };
+    Log4.onException = function () {
+
+    };
+}
+{
+    var Log4Leaf = function () {
+        this.LogloggerU = UniqueLogger.getInstance();
+        this.Bufferbuffer = UniqueBuffer.getInstance();
+    };
+    Log4Leaf.super = function (target) {
+        target.handleException(Log4);
+    };
+    Log4Leaf.flagPriority = false;
+    Log4Leaf.prototype = new HandlerNode();
+    Log4Leaf.prototype.constructor = Log4Leaf;
+    Log4Leaf.prototype.toString = function () {
+        return ' -Log4Leaf';
+    };
+}
+{
+    var A5 = function () {
+    };
+    A5.super = function (target) {
+        target.handleException(Log4);
+    };
+    A5.flagPriority = false;
+    A5.prototype = new HandlerNode();
+    A5.prototype.constructor = A5;
+    A5.prototype.toString = function () {
+        return ' -A5';
+    };
+}
+{
+    var B6 = function () {
+    };
+    B6.super = function (target) {
+        target.handleException(A5);
+    };
+    B6.flagPriority = true;
+    B6.prototype = new HandlerNode();
+    B6.prototype.constructor = B6;
+    B6.prototype.toString = function () {
+        return ' -B6';
+    };
+}
+{
+    var C7 = function () {
+    };
+    C7.super = function (target) {
+        target.handleException(B6);
+    };
+    C7.flagPriority = false;
+    C7.prototype = new HandlerNode();
+    C7.prototype.constructor = C7;
+    C7.prototype.toString = function () {
+        return ' -C7';
+    };
+}
+{
+    var C7Leaf = function () {
+        this.LogloggerU = UniqueLogger.getInstance();
+        this.Bufferbuffer = UniqueBuffer.getInstance();
+    };
+    C7Leaf.super = function (target) {
+        target.handleException(C7);
+    };
+    C7Leaf.flagPriority = false;
+    C7Leaf.prototype = new HandlerNode();
+    C7Leaf.prototype.constructor = C7Leaf;
+    C7Leaf.prototype.toString = function () {
+        return ' -C7Leaf';
+    };
+}
+var Log4Proxy = fp(Log4Leaf);
+var C7Proxy = fp(C7Leaf);
+var b = 2;
+{
+    var clientonly = 4;
+    {
+        C7Proxy.rpc('serverfunction', [b], function (err1, res1) {
+            var c = 3 + res1;
+            console.log('b',b)
+            //serverfunction(c);
+            Log4Proxy.rpc('serverfunction', [c], function (err1, res1) {
+                var g = res1 + 3;
+                var d = g;
+                console.log('d',d)
+            });
+        });
+    }
+    if (true) {
+    }
+    Log4Proxy.rpc('serverfunction', [clientonly], function (err1, res1) {
+        var h = res1 + 3;
+        console.log('h',h)
+    });
+}
+{
+}
+
+    </script>
+  
+
+</body>
+</html>

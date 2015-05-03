@@ -8,7 +8,7 @@ var options = {
 };
 
 var myClient = new ClientRpc('http://127.0.0.1:3000', options);
-var fp = makeFailureProxy(myClient, adapter);
+var fp = makeFailureProxy(myClient);
 
 //buffer calls...
 var myClientA = fp(CLeafA);
@@ -21,7 +21,6 @@ var random = function () {
 
 ///////////////////////////////////////////////////////////////////////
 var username;
-
 
 myClient.expose({
     'addChatMessage': function (author, msg) {

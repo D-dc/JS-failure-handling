@@ -7,7 +7,7 @@
 
 
 
-require('./logSingleton.js');
+require('../../../logSingleton.js');
 require('../../../nodeHandling.js');
 
 
