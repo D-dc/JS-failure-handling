@@ -4,7 +4,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Sample</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
     
 </head>
 
@@ -53,12 +52,15 @@ var fp = makeFailureProxy(client);
         return ' -Log4';
     };
     Log4.onException = function () {
-
+        console.log(this.ctxt)
+        this.LogmyLogger.append(' LOG CALL: ' + this.ctxt.callName + this.ctxt.callArgs() + this.ctxt.callError + this.ctxt.callResult);
+        // this.ctxt.succeed(10)
+        // this.ctxt.finish();
     };
 }
 {
     var Log4Leaf = function () {
-        this.LogloggerU = UniqueLogger.getInstance();
+        this.LogmyLogger = UniqueLogger.getInstance();
         this.Bufferbuffer = UniqueBuffer.getInstance();
     };
     Log4Leaf.super = function (target) {
@@ -90,7 +92,7 @@ var fp = makeFailureProxy(client);
     B6.super = function (target) {
         target.handleException(A5);
     };
-    B6.flagPriority = true;
+    B6.flagPriority = false;
     B6.prototype = new HandlerNode();
     B6.prototype.constructor = B6;
     B6.prototype.toString = function () {
@@ -98,58 +100,42 @@ var fp = makeFailureProxy(client);
     };
 }
 {
-    var C7 = function () {
-    };
-    C7.super = function (target) {
-        target.handleException(B6);
-    };
-    C7.flagPriority = false;
-    C7.prototype = new HandlerNode();
-    C7.prototype.constructor = C7;
-    C7.prototype.toString = function () {
-        return ' -C7';
-    };
-}
-{
-    var C7Leaf = function () {
-        this.LogloggerU = UniqueLogger.getInstance();
+    var B6Leaf = function () {
+        this.LogmyLogger = UniqueLogger.getInstance();
         this.Bufferbuffer = UniqueBuffer.getInstance();
     };
-    C7Leaf.super = function (target) {
-        target.handleException(C7);
+    B6Leaf.super = function (target) {
+        target.handleException(B6);
     };
-    C7Leaf.flagPriority = false;
-    C7Leaf.prototype = new HandlerNode();
-    C7Leaf.prototype.constructor = C7Leaf;
-    C7Leaf.prototype.toString = function () {
-        return ' -C7Leaf';
+    B6Leaf.flagPriority = false;
+    B6Leaf.prototype = new HandlerNode();
+    B6Leaf.prototype.constructor = B6Leaf;
+    B6Leaf.prototype.toString = function () {
+        return ' -B6Leaf';
     };
 }
 var Log4Proxy = fp(Log4Leaf);
-var C7Proxy = fp(C7Leaf);
+var B6Proxy = fp(B6Leaf);
 var b = 2;
 {
     var clientonly = 4;
     {
-        C7Proxy.rpc('serverfunction', [b], function (err1, res1) {
-            var c = 3 + res1;
-            console.log('b',b)
-            //serverfunction(c);
-            Log4Proxy.rpc('serverfunction', [c], function (err1, res1) {
+        B6Proxy.rpc('serverfunction', b, function (err1, res1) {
+            console.log('CALL 1');
+            //throw err1;
+            var c = res1 + 3;
+            Log4Proxy.rpc('serverfunction', c, function (err1, res1) {
+                console.log('CALL 2');
                 var g = res1 + 3;
-                var d = g;
-                console.log('d',d)
+                console.log('g = ',g)
             });
         });
     }
-    if (true) {
-    }
-    Log4Proxy.rpc('serverfunction', [clientonly], function (err1, res1) {
-        var h = res1 + 3;
-        console.log('h',h)
+    Log4Proxy.rpc('serverfunction', clientonly, function (err1, res1) {
+        console.log('CALL 3');
+        var h = res1 + 5;
+        console.log('h = ', h)
     });
-}
-{
 }
 
     </script>

@@ -23,10 +23,10 @@ var random = function () {
 var username;
 
 myClient.expose({
-    'addChatMessage': function (author, msg) {
+    'addChatMessage': function (author, msg, callback) {
         formatMessageDOM(msg, author);
     },
-    'addInformationMessage': function (msg) {
+    'addInformationMessage': function (msg, callback) {
         formatMessageDOM(msg, '');
     }
 });
@@ -37,7 +37,7 @@ var speakMsg = function () {
 
     var msg = $('#message').val();
 
-    myClientA.rpc('newChatMsg', [id, msg], function (err, res) {
+    myClientA.rpc('newChatMsg', id, msg, function (err, res) {
         $('#message').val('');
     });
 };
@@ -46,7 +46,7 @@ var setName = function () {
 
     var author = $('#author').val();
 
-    myClientB.rpc('setName', [id, author], function (err, res) {
+    myClientB.rpc('setName', id, author, function (err, res) {
         username = res;
         $('#author').val('');
 

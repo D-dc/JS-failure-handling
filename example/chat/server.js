@@ -58,16 +58,16 @@ var findUsername = function (id) {
 
 
 myServer.expose({
-    'newChatMsg': function (user, message) {
+    'newChatMsg': function (user, message, callback) {
 
         //ApplicationErrors
         if (!user || !findUsername(user)) throw new NoAuthorError('Message is missing an author.');
         if (!message) throw new EmptyMessageError('Empty messages are not allowed.');
 
         //broadcast
-        myServerA.rpc('addChatMessage', [findUsername(user), message], function () {});
+        myServerA.rpc('addChatMessage', findUsername(user), message);
     },
-    'setName': function (client, name) {
+    'setName': function (client, name, callback) {
 
         //ApplicationErrors
         if (!name) throw new ContentNotAllowedError('No empty username allowed.');
@@ -86,10 +86,10 @@ myServer.expose({
         }
 
         //broadcast
-        myServerB.rpc('addInformationMessage', [msg]);
+        myServerB.rpc('addInformationMessage', msg);
         usernames[name] = client;
 
-        return name;
+        callback(undefined, name);
 
     }
 });

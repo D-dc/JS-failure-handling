@@ -32,6 +32,7 @@ BufferSingleton.prototype.bufferCall = function (call) {
 	debug('Buffer call', call, '. Calls buffered: ', this.buffer.length);
 
 	this.installFlush(call.stub);
+	call.hasFailureContinuation();
 };
 
 BufferSingleton.prototype.flushBuffer = function () {

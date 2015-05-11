@@ -19,10 +19,9 @@ app.use('/', express.static(__dirname + '/'));
 ///////////////////////////////////////////////////////////////////////
 
 
-var server = new ServerRpc(app,3000, {});
+var server = new ServerRpc(app, 3000, {});
 var a = 1;
 {
-    var serveronly = 3;
     var serverfunction = function (x) {
         return x + a;
     };
@@ -30,6 +29,6 @@ var a = 1;
 }
 server.expose({
     serverfunction: function (x, callback) {
-        return x + a;
+        callback(undefined, x + a);
     }
 });

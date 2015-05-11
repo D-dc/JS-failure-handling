@@ -3,91 +3,163 @@
 //   https://github.com/dielc/rpc
 
 /*
-stub.rpc('remoteFunction', [a, b, c], function(err, res, retry) {}, 1000);
+stub.rpc('remoteFunction', a, b, c, function(err, res, retry) {}, 1000);
 */
 
-var adapter = {
-	stubMethodName: 'rpc',
 
-	stubRPCFunctionNamePosition: 0,
-	stubRPCArgsPosition:         1,
-	stubRPCContinuationPosition: 2,
-	continuationErrorPosition:   0,
-	continuationResultPosition:  1,
-	continuationRetryPosition:   2,
+var adapter = function(makeRPCObject, makeContinuationObject){
+	
+	/*
+		Helper functions.
+	*/
 
-	getRpcFunctionName: function (args) {
-		return args[this.stubRPCFunctionNamePosition];
-	},
+	var rpcExtractFromArgs = function(args){
+		var actualArgs, cb, due, name;
 
-	setRpcFunctionName: function (methodArgs, name) {
-		methodArgs[this.stubRPCFunctionNamePosition] = name;
-		return methodArgs;
-	},
+		if(args.length === 0)
+			throw new Error('Need at least function name.');
+		
+		actualArgs = args.slice();
+		name = actualArgs.shift();
 
-	getRpcArgs: function (args) {
-		return args[this.stubRPCArgsPosition];
-	},
+	    if(typeof actualArgs[actualArgs.length-1] === 'function'){
+	        cb = actualArgs.pop();
+	    }else if(
+	    	typeof actualArgs[actualArgs.length-2] === 'function' && 
+	    	typeof actualArgs[actualArgs.length-1] === 'number'){
+	        due = actualArgs.pop();
+	        cb = actualArgs.pop();
+	    }
 
-	setRpcArgs: function (methodArgs, rpcArgs) {
-		methodArgs[this.stubRPCArgsPosition] = rpcArgs;
-		return methodArgs;
-	},
+	    return makeRPCObject(name,actualArgs,cb,due);
+	};
 
-	getRpcContinuation: function (args) {
-		return args[this.stubRPCContinuationPosition];
-	},
+	var rpcBuildToArgs = function(rpcObject){
+		var args = [];
 
-	setRpcContinuation: function (methodArgs, continuation) {
-		methodArgs[this.stubRPCContinuationPosition] = continuation;
-		return methodArgs;
-	},
+		if(!rpcObject.functionName)
+			throw new Error('Need at least function name.');
 
-	getContinuationError: function (continuationArgs) {
-		return continuationArgs[this.continuationErrorPosition];
-	},
+		args.push(rpcObject.functionName);
+		args = args.concat(rpcObject.args);
+		if(rpcObject.continuation)
+			args.push(rpcObject.continuation);
+		if(rpcObject.due)
+			args.push(rpcObject.due);
+		return args;
+	};
 
-	setContinuationError: function (continuationArgs, val) {
-		continuationArgs[this.continuationErrorPosition] = val;
-		return continuationArgs;
-	},
+	var contExtractFromArgs = function(args){
+		return makeContinuationObject(args[0], args[1], args[2]);
+	};
 
-	getContinuationResult: function (continuationArgs) {
-		return continuationArgs[this.continuationResultPosition];
-	},
+	var contBuildToArgs = function(contObject){
+		var args = [];
+		
+		args.push(contObject.error);
+		args.push(contObject.result);
+		if(contObject.retry){
+			args.push(contObject.retry);
+		}else{
+			args.push(function(){});
+		}
+		
+		return args;
+	};
 
-	setContinuationResult: function (continuationArgs, val) {
-		continuationArgs[this.continuationResultPosition] = val;
-		return continuationArgs;
-	},
 
-	getContinuationRetry: function (continuationArgs) {
-		//return;
-		return continuationArgs[this.continuationRetryPosition];
-	},
 
-	setContinuationRetry: function (continuationArgs, val) {
-		//return;
-		continuationArgs[this.continuationRetryPosition] = val;
-		return continuationArgs;
-	},
+	/*
+		Interface.
+	*/
 
-	buildNewRpcArgs: function (functionName, args, continuation) {
-		var newArgs                               = [];
-		continuation                              = continuation || function () {};
-		newArgs[this.stubRPCFunctionNamePosition] = functionName;
-		newArgs[this.stubRPCArgsPosition]         = args;
-		newArgs[this.stubRPCContinuationPosition] = continuation;
-		return newArgs;
-	},
+	return {
+		stubMethodName: 'rpc',
 
-	buildNewCbArgs: function (err, res, retry) {
-		var newArgs                              = [];
-		newArgs[this.continuationErrorPosition]  = err;
-		newArgs[this.continuationResultPosition] = res;
-		newArgs[this.continuationRetryPosition]  = retry;
+		asRpc: function(args){
+			return rpcExtractFromArgs(args);
+		},
 
-	}
-};
+		asContinuation: function(args){
+			return contExtractFromArgs(args);
+		},
+
+		getRpcFunctionName: function (args) {
+			var rpcObject = rpcExtractFromArgs(args);
+			return rpcObject.functionName;
+		},
+
+		setRpcFunctionName: function (methodArgs, name) {
+			var rpcObject = rpcExtractFromArgs(methodArgs);
+			rpcObject.functionName = name;
+			return rpcBuildToArgs(rpcObject);
+		},
+
+		getRpcArgs: function (args) {
+			var rpcObject = rpcExtractFromArgs(args);
+			return rpcObject.args;
+		},
+
+		setRpcArgs: function (methodArgs, rpcArgs) {
+			var rpcObject = rpcExtractFromArgs(methodArgs);
+			rpcObject.args = rpcArgs;
+			return rpcBuildToArgs(rpcObject);
+		},
+
+		getRpcContinuation: function (args) {
+			var rpcObject = rpcExtractFromArgs(args);
+			return rpcObject.continuation;
+		},
+
+		setRpcContinuation: function (methodArgs, continuation) {
+			var rpcObject = rpcExtractFromArgs(methodArgs);
+			rpcObject.continuation = continuation;
+			return rpcBuildToArgs(rpcObject);
+		},
+
+		getContinuationError: function (continuationArgs) {
+			var contObject = contExtractFromArgs(continuationArgs);
+			return contObject.error;
+		},
+
+		setContinuationError: function (continuationArgs, val) {
+			var contObject = contExtractFromArgs(continuationArgs);
+			contObject.error = val;
+			return contBuildToArgs(contObject);
+		},
+
+		getContinuationResult: function (continuationArgs) {
+			var contObject = contExtractFromArgs(continuationArgs);
+			return contObject.result;
+		},
+
+		setContinuationResult: function (continuationArgs, val) {
+			var contObject = contExtractFromArgs(continuationArgs);
+			contObject.result = val;
+			return contBuildToArgs(contObject);
+		},
+
+		getContinuationRetry: function (continuationArgs) {
+			var contObject = contExtractFromArgs(continuationArgs);
+			return contObject.retry;
+		},
+
+		setContinuationRetry: function (continuationArgs, val) {
+			var contObject = contExtractFromArgs(continuationArgs);
+			contObject.retry = val;
+			return contBuildToArgs(contObject);
+		},
+
+		buildNewRpcArgs: function (functionName, args, continuation) {
+			var rpcObject = makeRPCObject(functionName, args, continuation);
+			return rpcBuildToArgs(rpcObject);
+		},
+
+		buildNewContinuationArgs: function (err, res, retry) {
+			var contObject = makeContinuationObject(err, res, retry);
+			return contBuildToArgs(contObject);
+		}
+	};
+};	
 
 module.exports = adapter;
