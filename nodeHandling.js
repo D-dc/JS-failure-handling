@@ -150,7 +150,6 @@ var Handler = (function () {
 			// info about the RPC (callName, callArgs, function(callError, callResult, callRetry){})
 			callName: call.functionName,
 			callArgs: function () {
-				console.log('CALL', call)
 				return call.args.slice();
 			},
 			isCallErrorType: function(exceptionType) {
@@ -165,9 +164,10 @@ var Handler = (function () {
 			//RETRY: We retry the ORIGINAL call, same args. (Takes into account omission failures, callee side-effects)
 			retry: function (continuation) {
 				var self = this;
-				console.log('retry')
+
 				this._doOnHandlingFinished(function () {
-					console.log('Performing retry now', this);
+					debug('-> Retrying', this);
+
 					var retry = self.callRetry;
 					if (retry) {
 						return retry(continuation);
@@ -179,11 +179,12 @@ var Handler = (function () {
 			alternateCall: function (newCallName, newCallArgs, continuation) {
 				var self = this;
 				this._doOnHandlingFinished(function () {
+					debug('-> AlternateCall', this);
 					var stubCall = self.stubCall;
-					if (!continuation)
-						continuation = adapter.getRpcContinuation(stubCall.methodArgs());
 
-					debug('continuation,', continuation);
+					newCallName = newCallName || adapter.getRpcFunctionName(stubCall.methodArgs());
+					newCallArgs = newCallArgs || adapter.getRpcArgs(stubCall.methodArgs());
+					continuation = continuation || adapter.getRpcContinuation(stubCall.methodArgs());
 
 					var newMethodArgs = adapter.buildNewRpcArgs(newCallName, newCallArgs, continuation);
 					var newArgs       = handlerMaker.install(proxy, newMethodArgs, proxyMethodName, failureLeaf);
@@ -197,6 +198,8 @@ var Handler = (function () {
 			continue: function (err, res, retry) {
 				var self = this;
 				this._doOnHandlingFinished(function () {
+					debug('-> continue', this);
+
 					var originalCb = self._getOriginalCb();
 					var newArgs = adapter.buildNewContinuationArgs(err, res, retry);
 
@@ -205,25 +208,26 @@ var Handler = (function () {
 			},
 
 			finish: function(){
-				debug('Propagation stopped');
+				debug('-> finish: Propagation stopped');
 				this._isFinished = true;
 			},
 
 			//Continue the continuation as failed
 			fail: function (err) {
-
+				debug('-> fail');
 				this.continue(err);
 
 			},
 
 			//Continue the continuation as succeeded
 			succeed: function (res) {
-
+				debug('-> succeed');
 				this.continue(undefined, res);
 
 			},
 
 			hasFailureContinuation: function(){
+				debug('-> hasFailureContinuation');
 				this._doOnHandlingFinished(noOp);
 			},
 

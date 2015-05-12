@@ -10,16 +10,20 @@ var stub = {
 	rpc: function(name, arg1, arg2, continuation){
 		var self = this;
 
+		var invokeCont = function(){
+			var nextResult = self.nextResult;
+			if(typeof nextResult === "boolean" && nextResult){
+				continuation(undefined, nextResult, retryFunc);
+			}else{
+				continuation(nextResult, undefined, retryFunc);
+			}
+		}
+
 		var retryFunc = function(){
-			return self.rpc(name, arg1, arg2, continuation)
+			invokeCont();
 		};
 
-		var nextResult = this.nextResult;
-		if(typeof nextResult === "boolean" && nextResult){
-			continuation(undefined, nextResult, retryFunc);
-		}else{
-			continuation(nextResult, undefined, retryFunc);
-		}
+		invokeCont();
 		
 	}
 }
@@ -38,85 +42,85 @@ describe('test call object interface', function() {
 	    	var callName = 'name',
 	    		arg1 = 1, arg2 = 2;
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 		    	expect(this.ctxt.callName).to.equal(callName);
 		    	expect(this.ctxt.callArgs()).to.eql([arg1, arg2]);
 		        done();
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc(callName, arg1, arg2, function(err, res) {});
+	        AProxy.rpc(callName, arg1, arg2, function(err, res) {});
 	    });
 
 
 	    it('Field: Error', function(done) {
 	    	stub.nextResult = new Error();
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 		    	expect(this.ctxt.callError).to.eql(stub.nextResult);
 		        done();
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {});
+	        AProxy.rpc('name', 1, 2, function(err, res) {});
 	    });
 
 
 	    it('Field: Result', function(done) {
 	    	stub.nextResult = new Error();
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 		    	expect(this.ctxt.callResult).to.equal(undefined);
 		        done();
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {});
+	        AProxy.rpc('name', 1, 2, function(err, res) {});
 	    });
 
 	});
@@ -128,27 +132,27 @@ describe('test call object interface', function() {
 
 	    	var value = 42;
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 		    	this.ctxt.succeed(value);
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {
+	        AProxy.rpc('name', 1, 2, function(err, res) {
 	        	expect(res).to.equal(value);
 	        	expect(err).to.be.undefined;
 	        	done();
@@ -161,27 +165,27 @@ describe('test call object interface', function() {
 
 	    	var value = 42;
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 		    	this.ctxt.fail(value);
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {
+	        AProxy.rpc('name', 1, 2, function(err, res) {
 	        	expect(res).to.be.undefined;
 	        	expect(err).to.equal(value);
 	        	done();
@@ -194,27 +198,27 @@ describe('test call object interface', function() {
 
 	    	var value = 42;
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 		    	this.ctxt.continue(value, value);
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {
+	        AProxy.rpc('name', 1, 2, function(err, res) {
 	        	expect(res).to.equal(value);
 	        	expect(err).to.equal(value);
 	        	done();
@@ -227,29 +231,29 @@ describe('test call object interface', function() {
 
 	    	var counter = 0;
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 		    	counter++;
 		    	stub.nextResult = true;
 		    	this.ctxt.retry();
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {
+	        AProxy.rpc('name', 1, 2, function(err, res) {
 	        	expect(counter).to.equal(1);
 	        	expect(err).to.be.undefined;
 	        	expect(res).to.be.true;
@@ -263,30 +267,30 @@ describe('test call object interface', function() {
 
 	    	var counter = 0;
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 		    	counter++;
 		    	if(counter===10)
 		    		stub.nextResult = true;
 		    	this.ctxt.retry();
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {
+	        AProxy.rpc('name', 1, 2, function(err, res) {
 	        	expect(counter).to.equal(10);
 	        	expect(err).to.be.undefined;
 	        	expect(res).to.be.true;
@@ -298,28 +302,28 @@ describe('test call object interface', function() {
 	    it('Method: alternateCall() (same callback)', function(done) {
 	    	stub.nextResult = new Error();
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 				stub.nextResult = true;
 		    	this.ctxt.alternateCall(this.ctxt.callName, this.ctxt.callArgs());
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {
+	        AProxy.rpc('name', 1, 2, function(err, res) {
 	        	expect(err).to.be.undefined;
 	        	expect(res).to.be.true;
 	        	done();
@@ -330,30 +334,30 @@ describe('test call object interface', function() {
 	    it('Method: alternateCall() (other callback)', function(done) {
 	    	stub.nextResult = new Error();
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 				stub.nextResult = true;
 		    	this.ctxt.alternateCall(this.ctxt.callName, this.ctxt.callArgs(), function(err, res){
 		    		done();
 		    	});
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {
+	        AProxy.rpc('name', 1, 2, function(err, res) {
 	        	done(new Error('should not be called.'));
 	        });
 	    });
@@ -362,12 +366,12 @@ describe('test call object interface', function() {
 	    it('Method: hasFailureContinuation()', function(done) {
 	    	stub.nextResult = new Error();
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 				stub.nextResult = true;
 		    	this.ctxt.hasFailureContinuation();
 		    	setTimeout(function(){
@@ -375,18 +379,18 @@ describe('test call object interface', function() {
 		    	}, 250);
 		    };
 
-		    //A1Leaf state
-		    var A1Leaf = function () {};
-		    A1Leaf.super = function (target) {
-		        target.handleException(A1);
+		    //ALeaf state
+		    var ALeaf = function () {};
+		    ALeaf.super = function (target) {
+		        target.handleException(A);
 		    };
-		    A1Leaf.flagPriority = false;
-		    A1Leaf.prototype = new HandlerNode();
-		    A1Leaf.prototype.constructor = A1Leaf;
+		    ALeaf.flagPriority = false;
+		    ALeaf.prototype = new HandlerNode();
+		    ALeaf.prototype.constructor = ALeaf;
 
-		    var A1Proxy = fp(A1Leaf);
+		    var AProxy = fp(ALeaf);
 
-	        A1Proxy.rpc('name', 1, 2, function(err, res) {
+	        AProxy.rpc('name', 1, 2, function(err, res) {
 	        	done(new Error('should not be called.'));
 	        });
 	    });
@@ -395,41 +399,41 @@ describe('test call object interface', function() {
 	    it('Method: finish()', function(done) {
 	    	stub.nextResult = new Error();
 
-	    	//A1 Logic
-	    	var A1 = function () {};
-		    A1.flagPriority = false;
-		    A1.prototype = new HandlerNode();
-		    A1.prototype.constructor = A1;
-		    A1.onException = function () {
+	    	//A Logic
+	    	var A = function () {};
+		    A.flagPriority = false;
+		    A.prototype = new HandlerNode();
+		    A.prototype.constructor = A;
+		    A.onException = function () {
 		    	done(new Error('should not be called.'));
 		    };
 
-		    //B2 Logic
-		    var B2 = function () {
+		    //B Logic
+		    var B = function () {
 		    };
-		    B2.super = function (target) {
-		        target.handleException(A1);
+		    B.super = function (target) {
+		        target.handleException(A);
 		    };
-		    B2.flagPriority = false;
-		    B2.prototype = new HandlerNode();
-		    B2.prototype.constructor = B2;
-		    B2.onException = function () {
+		    B.flagPriority = false;
+		    B.prototype = new HandlerNode();
+		    B.prototype.constructor = B;
+		    B.onException = function () {
 		    	this.ctxt.finish();
 		    };
 
-		    //B2Leaf state
-		    var B2Leaf = function () {
+		    //BLeaf state
+		    var BLeaf = function () {
 		    };
-		    B2Leaf.super = function (target) {
-		        target.handleException(B2);
+		    BLeaf.super = function (target) {
+		        target.handleException(B);
 		    };
-		    B2Leaf.flagPriority = false;
-		    B2Leaf.prototype = new HandlerNode();
-		    B2Leaf.prototype.constructor = B2Leaf;
+		    BLeaf.flagPriority = false;
+		    BLeaf.prototype = new HandlerNode();
+		    BLeaf.prototype.constructor = BLeaf;
 
-		    var B2Proxy = fp(B2Leaf);
+		    var BProxy = fp(BLeaf);
 
-	        B2Proxy.rpc('name', 1, 2, function(err, res) {
+	        BProxy.rpc('name', 1, 2, function(err, res) {
 	        	done();
 	        });
 	    });
