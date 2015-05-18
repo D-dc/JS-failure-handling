@@ -14,8 +14,8 @@
   },
   "scripts": {
     "test": "mocha --harmony_proxies",
-    "build-js": "browserify nodeHandling.js -o client/bundle.js -dv",
-    "watch-js": "watchify nodeHandling.js -o client/bundle.js -dv"
+    "build-js": "browserify lib/nodeHandling.js -o client/bundle.js -dv",
+    "watch-js": "watchify lib/nodeHandling.js -o client/bundle.js -dv"
   },
   "repository": {
     "type": "git",

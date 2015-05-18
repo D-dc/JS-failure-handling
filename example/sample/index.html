@@ -23,27 +23,27 @@
     <script type="text/javascript">
     'use strict';
 
-   var client = new ClientRpc('http://127.0.0.1:3000');
+/* CLIENT */
+var client = new ClientRpc('http://127.0.0.1:8080', {});
 var fp = makeFailureProxy(client);
 {
-    var Buffer3 = function () {
+    var LogA3 = function () {
     };
-    Buffer3.flagPriority = false;
-    Buffer3.prototype = new HandlerNode();
-    Buffer3.prototype.constructor = Buffer3;
-    Buffer3.prototype.toString = function () {
-        return ' -Buffer3';
+    LogA3.flagPriority = false;
+    LogA3.prototype = new HandlerNode();
+    LogA3.prototype.constructor = LogA3;
+    LogA3.prototype.toString = function () {
+        return ' -LogA3';
     };
-    Buffer3.onNetworkException = function () {
-        var buffer = this.Bufferbuffer;
-        buffer.bufferCall(this.ctxt);
+    LogA3.onException = function () {
+        this.loggerULogA3.append('RPC CALL: ' + this.ctxt.callName + ' ARGS: ' + this.ctxt.callArgs() + ' ERROR: ' + this.ctxt.callError);
     };
 }
 {
     var Log4 = function () {
     };
     Log4.super = function (target) {
-        target.handleException(Buffer3);
+        target.handleException(LogA3);
     };
     Log4.flagPriority = false;
     Log4.prototype = new HandlerNode();
@@ -52,91 +52,82 @@ var fp = makeFailureProxy(client);
         return ' -Log4';
     };
     Log4.onException = function () {
-        console.log(this.ctxt)
-        this.LogmyLogger.append(' LOG CALL: ' + this.ctxt.callName + this.ctxt.callArgs() + this.ctxt.callError + this.ctxt.callResult);
-        // this.ctxt.succeed(10)
-        // this.ctxt.finish();
+        this.loggerLog4.append('RPC CALL: ' + this.ctxt.callName + ' ARGS: ' + this.ctxt.callArgs() + ' ERROR: ' + this.ctxt.callError);
+        this.ctxt.proceed();
+    };
+    Log4.onNativeException = function () {
+        this.loggerLog4.append('RPC CALL: ' + this.ctxt.callName + ' ARGS ' + this.ctxt.callArgs() + ' ERROR: ' + this.ctxt.callError);
+        this.loggerLog4.append(this.ctxt.callError.stack);
+        this.ctxt.proceed();
     };
 }
 {
-    var Log4Leaf = function () {
-        this.LogmyLogger = UniqueLogger.getInstance();
-        this.Bufferbuffer = UniqueBuffer.getInstance();
+    var Log4Handler = function () {
+        this.loggerLog4 = UniqueLogger.getInstance();
+        this.loggerULogA3 = UniqueLogger.getInstance();
     };
-    Log4Leaf.super = function (target) {
+    Log4Handler.super = function (target) {
         target.handleException(Log4);
     };
-    Log4Leaf.flagPriority = false;
-    Log4Leaf.prototype = new HandlerNode();
-    Log4Leaf.prototype.constructor = Log4Leaf;
-    Log4Leaf.prototype.toString = function () {
-        return ' -Log4Leaf';
+    Log4Handler.flagPriority = false;
+    Log4Handler.prototype = new HandlerNode();
+    Log4Handler.prototype.constructor = Log4Handler;
+    Log4Handler.prototype.toString = function () {
+        return ' -Log4Handler';
     };
 }
 {
-    var A5 = function () {
+    var Buffer5 = function () {
     };
-    A5.super = function (target) {
+    Buffer5.super = function (target) {
         target.handleException(Log4);
     };
-    A5.flagPriority = false;
-    A5.prototype = new HandlerNode();
-    A5.prototype.constructor = A5;
-    A5.prototype.toString = function () {
-        return ' -A5';
+    Buffer5.flagPriority = false;
+    Buffer5.prototype = new HandlerNode();
+    Buffer5.prototype.constructor = Buffer5;
+    Buffer5.prototype.toString = function () {
+        return ' -Buffer5';
+    };
+    Buffer5.onNetworkException = function () {
+        var buffer = this.bufferBuffer5;
+        buffer.bufferCall(this.ctxt);
     };
 }
 {
-    var B6 = function () {
+    var Buffer5Handler = function () {
+        this.bufferBuffer5 = UniqueBuffer.getInstance();
+        this.loggerLog4 = UniqueLogger.getInstance();
+        this.loggerULogA3 = UniqueLogger.getInstance();
     };
-    B6.super = function (target) {
-        target.handleException(A5);
+    Buffer5Handler.super = function (target) {
+        target.handleException(Buffer5);
     };
-    B6.flagPriority = false;
-    B6.prototype = new HandlerNode();
-    B6.prototype.constructor = B6;
-    B6.prototype.toString = function () {
-        return ' -B6';
-    };
-}
-{
-    var B6Leaf = function () {
-        this.LogmyLogger = UniqueLogger.getInstance();
-        this.Bufferbuffer = UniqueBuffer.getInstance();
-    };
-    B6Leaf.super = function (target) {
-        target.handleException(B6);
-    };
-    B6Leaf.flagPriority = false;
-    B6Leaf.prototype = new HandlerNode();
-    B6Leaf.prototype.constructor = B6Leaf;
-    B6Leaf.prototype.toString = function () {
-        return ' -B6Leaf';
+    Buffer5Handler.flagPriority = false;
+    Buffer5Handler.prototype = new HandlerNode();
+    Buffer5Handler.prototype.constructor = Buffer5Handler;
+    Buffer5Handler.prototype.toString = function () {
+        return ' -Buffer5Handler';
     };
 }
-var Log4Proxy = fp(Log4Leaf);
-var B6Proxy = fp(B6Leaf);
+var Proxy4 = fp(Log4Handler);
+var Proxy5 = fp(Buffer5Handler);
 var b = 2;
 {
     var clientonly = 4;
     {
-        B6Proxy.rpc('serverfunction', b, function (err1, res1) {
-            console.log('CALL 1');
-            //throw err1;
+        Proxy5.rpc('serverfunction', b, function (err1, res1) {
             var c = res1 + 3;
-            Log4Proxy.rpc('serverfunction', c, function (err1, res1) {
-                console.log('CALL 2');
+            Proxy4.rpc('serverfunction', c, function (err1, res1) {
                 var g = res1 + 3;
-                console.log('g = ',g)
+                console.log('g=',g)
             });
+            var e = c / 2;
+            console.log('e=',e)
         });
     }
-    Log4Proxy.rpc('serverfunction', clientonly, function (err1, res1) {
-        console.log('CALL 3');
-        var h = res1 + 5;
-        console.log('h = ', h)
-    });
+    var d = clientonly * 2;
 }
+
 
     </script>
   

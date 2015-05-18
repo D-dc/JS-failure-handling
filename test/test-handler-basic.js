@@ -1,239 +1,260 @@
-
 var assert = require("assert"),
-    expect = require('chai').expect,
-    ServerRpc = require('../../RPCT/index.js');
+	expect = require('chai').expect,
+	ServerRpc = require('../../RPCT/index.js');
 
-require('../nodeHandling.js');
+require('../lib/nodeHandling.js');
 
 var stub = {
 	nextResult: true,
-	rpc: function(name, arg1, arg2, continuation){
+	rpc: function (name, arg1, arg2, continuation) {
 
 		var nextResult = this.nextResult;
-		if(typeof nextResult === "boolean" && nextResult){
+		if (typeof nextResult === "boolean" && nextResult) {
 			continuation(undefined, nextResult);
-		}else{
+		} else {
 			continuation(nextResult);
 		}
-		
+
 	}
 }
-    
-describe('tests', function() {
+
+describe('tests', function () {
 
 	var fp = makeFailureProxy(stub);
-	
 
-	describe('test return types', function() {
-	    
+	describe('test return types', function () {
 
-	    it('should not do handling when normal return', function(done) {
-	    	stub.nextResult = true;
-	    	//A Logic
-	    	var A = function () {};
-		    A.flagPriority = false;
-		    A.prototype = new HandlerNode();
-		    A.prototype.constructor = A;
-		    A.onException = function () {
-		        done(new Error('should not invoke onException method.'));
-		    };
 
-		    //ALeaf state
-		    var ALeaf = function () {};
-		    ALeaf.super = function (target) {
-		        target.handleException(A);
-		    };
-		    ALeaf.flagPriority = false;
-		    ALeaf.prototype = new HandlerNode();
-		    ALeaf.prototype.constructor = ALeaf;
+		it('should not do handling when normal return', function (done) {
+			stub.nextResult = true;
+			//A Logic
+			var A = function () {};
+			A.flagPriority = false;
+			A.prototype = new HandlerNode();
+			A.prototype.constructor = A;
+			A.onException = function () {
+				done(new Error('should not invoke onException method.'));
+			};
 
-		    var AProxy = fp(ALeaf);
+			//ALeaf state
+			var ALeaf = function () {};
+			ALeaf.super = function (target) {
+				target.handleException(A);
+			};
+			ALeaf.flagPriority = false;
+			ALeaf.prototype = new HandlerNode();
+			ALeaf.prototype.constructor = ALeaf;
 
-	        AProxy.rpc('name', 1, 2, function(err, res) {
-	            expect(err).to.equal(undefined);
-	            expect(res).to.be.true;
-	            done();
-	        });
-	    });
+			var AProxy = fp(ALeaf);
 
-	    
-	    it('should do handling when exceptional return', function(done) {
-	    	stub.nextResult = new Error();
-	    	//A Logic
-	    	var A = function () {};
-		    A.flagPriority = false;
-		    A.prototype = new HandlerNode();
-		    A.prototype.constructor = A;
-		    A.onException = function () {
-		        done();
-		    };
+			AProxy.rpc('name', 1, 2, function (err, res) {
+				expect(err).to.equal(undefined);
+				expect(res).to.be.true;
+				done();
+			});
+		});
 
-		    //ALeaf state
-		    var ALeaf = function () {};
-		    ALeaf.super = function (target) {
-		        target.handleException(A);
-		    };
-		    ALeaf.flagPriority = false;
-		    ALeaf.prototype = new HandlerNode();
-		    ALeaf.prototype.constructor = ALeaf;
 
-		    var AProxy = fp(ALeaf);
+		it('should do handling when exceptional return', function (done) {
+			stub.nextResult = new Error();
+			var invoked = false;
 
-	        AProxy.rpc('name', 1, 2, function(err, res) {
-	            expect(err).to.equal(stub.nextResult);
-	            expect(res).to.be.undefined;
-	        });
-	    });
+			//A Logic
+			var A = function () {};
+			A.flagPriority = false;
+			A.prototype = new HandlerNode();
+			A.prototype.constructor = A;
+			A.onException = function () {
+				invoked = true;
+				this.ctxt.proceed();
+			};
+
+			//ALeaf state
+			var ALeaf = function () {};
+			ALeaf.super = function (target) {
+				target.handleException(A);
+			};
+			ALeaf.flagPriority = false;
+			ALeaf.prototype = new HandlerNode();
+			ALeaf.prototype.constructor = ALeaf;
+
+			var AProxy = fp(ALeaf);
+
+			AProxy.rpc('name', 1, 2, function (err, res) {
+				expect(err).to.equal(stub.nextResult);
+				expect(res).to.be.undefined;
+
+				if (invoked) done();
+			});
+		});
 	});
 
 
-	describe('test handler methods', function() {
-	    
-
-	    it('should invoke onException method', function(done) {
-	    	stub.nextResult = new Error();
-	    	//A Logic
-	    	var A = function () {};
-		    A.flagPriority = false;
-		    A.prototype = new HandlerNode();
-		    A.prototype.constructor = A;
-		    A.onException = function () {
-		        done();
-		    };
-
-		    //ALeaf state
-		    var ALeaf = function () {};
-		    ALeaf.super = function (target) {
-		        target.handleException(A);
-		    };
-		    ALeaf.flagPriority = false;
-		    ALeaf.prototype = new HandlerNode();
-		    ALeaf.prototype.constructor = ALeaf;
-
-		    var AProxy = fp(ALeaf);
-
-	        AProxy.rpc('name', 1, 2, function(err, res) {
-	            expect(err).to.equal(stub.nextResult);
-	            expect(res).to.be.undefined;
-	        });
-	    });
+	describe('test handler methods', function () {
 
 
-	    it('should invoke specific method', function(done) {
-	    	stub.nextResult = new NetworkError();
-	    	//A Logic
-	    	var A = function () {};
-		    A.flagPriority = false;
-		    A.prototype = new HandlerNode();
-		    A.prototype.constructor = A;
-		    A.onNetworkException = function () {
-		        done();
-		    };
-		    A.onException = function () {
-		        done(new Error('should not invoke method.'));
-		    };
+		it('should invoke onException method', function (done) {
+			stub.nextResult = new Error();
+			var invoked = false;
 
-		    //ALeaf state
-		    var ALeaf = function () {};
-		    ALeaf.super = function (target) {
-		        target.handleException(A);
-		    };
-		    ALeaf.flagPriority = false;
-		    ALeaf.prototype = new HandlerNode();
-		    ALeaf.prototype.constructor = ALeaf;
+			//A Logic
+			var A = function () {};
+			A.flagPriority = false;
+			A.prototype = new HandlerNode();
+			A.prototype.constructor = A;
+			A.onException = function () {
+				invoked = true;
+				this.ctxt.proceed();
+			};
 
-		    var AProxy = fp(ALeaf);
+			//ALeaf state
+			var ALeaf = function () {};
+			ALeaf.super = function (target) {
+				target.handleException(A);
+			};
+			ALeaf.flagPriority = false;
+			ALeaf.prototype = new HandlerNode();
+			ALeaf.prototype.constructor = ALeaf;
 
-	        AProxy.rpc('name', 1, 2, function(err, res) {
-	            expect(err).to.equal(stub.nextResult);
-	            expect(res).to.be.undefined;
-	        });
-	    });
+			var AProxy = fp(ALeaf);
 
+			AProxy.rpc('name', 1, 2, function (err, res) {
+				expect(err).to.equal(stub.nextResult);
+				expect(res).to.be.undefined;
 
-	    it('should invoke onException method (if more specific method is absent)', function(done) {
-	    	stub.nextResult = new NetworkError();
-	    	//A Logic
-	    	var A = function () {};
-		    A.flagPriority = false;
-		    A.prototype = new HandlerNode();
-		    A.prototype.constructor = A;
-		    A.onException = function () {
-		        done();
-		    };
-
-		    //ALeaf state
-		    var ALeaf = function () {};
-		    ALeaf.super = function (target) {
-		        target.handleException(A);
-		    };
-		    ALeaf.flagPriority = false;
-		    ALeaf.prototype = new HandlerNode();
-		    ALeaf.prototype.constructor = ALeaf;
-
-		    var AProxy = fp(ALeaf);
-
-	        AProxy.rpc('name', 1, 2, function(err, res) {
-	            expect(err).to.equal(stub.nextResult);
-	            expect(res).to.be.undefined;
-	        });
-	    });
+				if (invoked) done();
+			});
+		});
 
 
-	    it('should invoke callback if no handling method present (Other specific).', function(done) {
-	    	stub.nextResult = new NetworkError();
-	    	//A Logic
-	    	var A = function () {};
-		    A.flagPriority = false;
-		    A.prototype = new HandlerNode();
-		    A.prototype.constructor = A;
-		    A.onNativeException = function () {
-		        done();
-		    };
+		it('should invoke specific method', function (done) {
+			stub.nextResult = new NetworkError();
+			var invoked = false;
 
-		    //ALeaf state
-		    var ALeaf = function () {};
-		    ALeaf.super = function (target) {
-		        target.handleException(A);
-		    };
-		    ALeaf.flagPriority = false;
-		    ALeaf.prototype = new HandlerNode();
-		    ALeaf.prototype.constructor = ALeaf;
+			//A Logic
+			var A = function () {};
+			A.flagPriority = false;
+			A.prototype = new HandlerNode();
+			A.prototype.constructor = A;
+			A.onNetworkException = function () {
+				invoked = true;
+				this.ctxt.proceed();
+			};
+			A.onException = function () {
+				done(new Error('should not invoke method.'));
+			};
 
-		    var AProxy = fp(ALeaf);
+			//ALeaf state
+			var ALeaf = function () {};
+			ALeaf.super = function (target) {
+				target.handleException(A);
+			};
+			ALeaf.flagPriority = false;
+			ALeaf.prototype = new HandlerNode();
+			ALeaf.prototype.constructor = ALeaf;
 
-	        AProxy.rpc('name', 1, 2, function(err, res) {
-	            expect(err).to.equal(stub.nextResult);
-	            expect(res).to.be.undefined;
-	            done();
-	        });
-	    });
+			var AProxy = fp(ALeaf);
+
+			AProxy.rpc('name', 1, 2, function (err, res) {
+				expect(err).to.equal(stub.nextResult);
+				expect(res).to.be.undefined;
+
+				if (invoked) done();
+			});
+		});
 
 
-	    it('should invoke callback if no handling method present.', function(done) {
-	    	stub.nextResult = new NetworkError();
-	    	//A Logic
-	    	var A = function () {};
-		    A.flagPriority = false;
-		    A.prototype = new HandlerNode();
-		    A.prototype.constructor = A;
+		it('should invoke onException method (if more specific method is absent)', function (done) {
+			stub.nextResult = new NetworkError();
+			var invoked = false;
 
-		    //ALeaf state
-		    var ALeaf = function () {};
-		    ALeaf.super = function (target) {
-		        target.handleException(A);
-		    };
-		    ALeaf.flagPriority = false;
-		    ALeaf.prototype = new HandlerNode();
-		    ALeaf.prototype.constructor = ALeaf;
+			//A Logic
+			var A = function () {};
+			A.flagPriority = false;
+			A.prototype = new HandlerNode();
+			A.prototype.constructor = A;
+			A.onException = function () {
+				invoked = true;
+				this.ctxt.proceed();
+			};
 
-		    var AProxy = fp(ALeaf);
+			//ALeaf state
+			var ALeaf = function () {};
+			ALeaf.super = function (target) {
+				target.handleException(A);
+			};
+			ALeaf.flagPriority = false;
+			ALeaf.prototype = new HandlerNode();
+			ALeaf.prototype.constructor = ALeaf;
 
-	        AProxy.rpc('name', 1, 2, function(err, res) {
-	            expect(err).to.equal(stub.nextResult);
-	            expect(res).to.be.undefined;
-	            done();
-	        });
-	    });
+			var AProxy = fp(ALeaf);
+
+			AProxy.rpc('name', 1, 2, function (err, res) {
+				expect(err).to.equal(stub.nextResult);
+				expect(res).to.be.undefined;
+				if (invoked) done();
+			});
+		});
+
+
+		it('should invoke callback if no handling method present (Other specific).', function (done) {
+			stub.nextResult = new NetworkError();
+
+			//A Logic
+			var A = function () {};
+			A.flagPriority = false;
+			A.prototype = new HandlerNode();
+			A.prototype.constructor = A;
+			A.onNativeException = function () {
+				done(new Error('should not invoke'));
+			};
+
+			//ALeaf state
+			var ALeaf = function () {};
+			ALeaf.super = function (target) {
+				target.handleException(A);
+			};
+			ALeaf.flagPriority = false;
+			ALeaf.prototype = new HandlerNode();
+			ALeaf.prototype.constructor = ALeaf;
+
+			var AProxy = fp(ALeaf);
+
+			AProxy.rpc('name', 1, 2, function (err, res) {
+				expect(err).to.equal(stub.nextResult);
+				expect(res).to.be.undefined;
+
+				done();
+			});
+		});
+
+
+		it('should invoke callback if no handling method present.', function (done) {
+			stub.nextResult = new NetworkError();
+
+			//A Logic
+			var A = function () {};
+			A.flagPriority = false;
+			A.prototype = new HandlerNode();
+			A.prototype.constructor = A;
+
+			//ALeaf state
+			var ALeaf = function () {};
+			ALeaf.super = function (target) {
+				target.handleException(A);
+			};
+			ALeaf.flagPriority = false;
+			ALeaf.prototype = new HandlerNode();
+			ALeaf.prototype.constructor = ALeaf;
+
+			var AProxy = fp(ALeaf);
+
+			AProxy.rpc('name', 1, 2, function (err, res) {
+				expect(err).to.equal(stub.nextResult);
+				expect(res).to.be.undefined;
+
+				done();
+			});
+		});
 	});
-});	
+});
