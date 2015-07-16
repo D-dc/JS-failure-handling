@@ -41,8 +41,6 @@ describe('Test call object interface (multiple handlers)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onNetworkException = function () {
 				expect(this.ctxt.callError).not.to.equal(stub.nextResult);
 				expect(this.ctxt.callError).to.be.instanceof(NetworkError);
@@ -52,12 +50,8 @@ describe('Test call object interface (multiple handlers)', function () {
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				expect(this.ctxt.callError).to.eql(stub.nextResult);
 
@@ -69,9 +63,7 @@ describe('Test call object interface (multiple handlers)', function () {
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -96,29 +88,21 @@ describe('Test call object interface (multiple handlers)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				done(new Error('should not be invoked.'))
 			};
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				this.ctxt.succeed(value);
 			};
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -141,29 +125,21 @@ describe('Test call object interface (multiple handlers)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				done(new Error('should not be invoked.'))
 			};
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				this.ctxt.fail(value);
 			};
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -185,29 +161,21 @@ describe('Test call object interface (multiple handlers)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				done(new Error('should not be invoked.'))
 			};
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				this.ctxt.continue(value, value);
 			};
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -230,20 +198,14 @@ describe('Test call object interface (multiple handlers)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				done(new Error('should not be invoked'));
 			};
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				counter++;
 				stub.nextResult = true;
@@ -252,9 +214,7 @@ describe('Test call object interface (multiple handlers)', function () {
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -278,20 +238,14 @@ describe('Test call object interface (multiple handlers)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				done(new Error('should not be invoked'));
 			};
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				counter++;
 				if (counter === 10)
@@ -302,9 +256,7 @@ describe('Test call object interface (multiple handlers)', function () {
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -326,30 +278,22 @@ describe('Test call object interface (multiple handlers)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				done(new Error('should not be invoked'));
 			};
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				stub.nextResult = true;
-				this.ctxt.alternateCall(this.ctxt.callName, this.ctxt.callArgs());
+				this.ctxt.alternativeCall(this.ctxt.callName, this.ctxt.callArgs());
 			};
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -364,38 +308,30 @@ describe('Test call object interface (multiple handlers)', function () {
 		});
 
 
-		it('Method: alternateCall() (other callback)', function (done) {
+		it('Method: alternativeCall() (other callback)', function (done) {
 			stub.nextResult = new Error();
 
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				done(new Error('should not be invoked'));
 			};
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				stub.nextResult = true;
-				this.ctxt.alternateCall(this.ctxt.callName, this.ctxt.callArgs(), function (err, res) {
+				this.ctxt.alternativeCall(this.ctxt.callName, this.ctxt.callArgs(), function (err, res) {
 					done();
 				});
 			};
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -414,20 +350,14 @@ describe('Test call object interface (multiple handlers)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				done(new Error('should not be called.'));
 			};
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				stub.nextResult = true;
 				this.ctxt.hasFailureContinuation();
@@ -438,9 +368,7 @@ describe('Test call object interface (multiple handlers)', function () {
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;

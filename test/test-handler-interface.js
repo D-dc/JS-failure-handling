@@ -45,8 +45,6 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				expect(this.ctxt.callName).to.equal(callName);
 				expect(this.ctxt.callArgs()).to.eql([arg1, arg2]);
@@ -55,9 +53,7 @@ describe('Test call object interface (1 Handler)', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -74,8 +70,6 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				expect(this.ctxt.callError).to.eql(stub.nextResult);
 				done();
@@ -83,9 +77,7 @@ describe('Test call object interface (1 Handler)', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -102,8 +94,6 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				expect(this.ctxt.callResult).to.equal(undefined);
 				done();
@@ -111,9 +101,7 @@ describe('Test call object interface (1 Handler)', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -135,17 +123,13 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				this.ctxt.succeed(value);
 			};
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -168,17 +152,13 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				this.ctxt.fail(value);
 			};
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -201,17 +181,13 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				this.ctxt.continue(value, value);
 			};
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -234,8 +210,6 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				counter++;
 				stub.nextResult = true;
@@ -244,9 +218,7 @@ describe('Test call object interface (1 Handler)', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -270,8 +242,6 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				counter++;
 				if (counter === 10)
@@ -281,9 +251,7 @@ describe('Test call object interface (1 Handler)', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -299,24 +267,20 @@ describe('Test call object interface (1 Handler)', function () {
 		});
 
 
-		it('Method: alternateCall() (same callback)', function (done) {
+		it('Method: alternativeCall() (same callback)', function (done) {
 			stub.nextResult = new Error();
 
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				stub.nextResult = true;
-				this.ctxt.alternateCall(this.ctxt.callName, this.ctxt.callArgs());
+				this.ctxt.alternativeCall(this.ctxt.callName, this.ctxt.callArgs());
 			};
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -331,26 +295,22 @@ describe('Test call object interface (1 Handler)', function () {
 		});
 
 
-		it('Method: alternateCall() (other callback)', function (done) {
+		it('Method: alternativeCall() (other callback)', function (done) {
 			stub.nextResult = new Error();
 
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				stub.nextResult = true;
-				this.ctxt.alternateCall(this.ctxt.callName, this.ctxt.callArgs(), function (err, res) {
+				this.ctxt.alternativeCall(this.ctxt.callName, this.ctxt.callArgs(), function (err, res) {
 					done();
 				});
 			};
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -369,8 +329,6 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				stub.nextResult = true;
 				this.ctxt.hasFailureContinuation();
@@ -381,9 +339,7 @@ describe('Test call object interface (1 Handler)', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -402,8 +358,6 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				console.log('c')
 				done(new Error('should not be called.'));
@@ -416,17 +370,13 @@ describe('Test call object interface (1 Handler)', function () {
 				target.handleException(A);
 			};
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				done();
 			};
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -445,8 +395,6 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 
 			//B Logic
 			var B = function () {};
@@ -454,15 +402,11 @@ describe('Test call object interface (1 Handler)', function () {
 				target.handleException(A);
 			};
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -483,8 +427,6 @@ describe('Test call object interface (1 Handler)', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				counter++;
 				this.ctxt.proceed();
@@ -492,12 +434,8 @@ describe('Test call object interface (1 Handler)', function () {
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				counter++;
 				this.ctxt.proceed();
@@ -505,9 +443,7 @@ describe('Test call object interface (1 Handler)', function () {
 
 			//BLeaf state
 			var BLeaf = function () {};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;

@@ -75,9 +75,7 @@ describe('test-handler-state', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.super = function (target) {
-				target.handleException(CheckState);
-			};
+			A.parent = CheckState;
 			A.prototype = new HandlerNode();
 			A.prototype.constructor = A;
 			A.onException = function () {
@@ -87,9 +85,7 @@ describe('test-handler-state', function () {
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
 			B.prototype = new HandlerNode();
 			B.prototype.constructor = B;
@@ -103,9 +99,7 @@ describe('test-handler-state', function () {
 				this.AState = new State();
 				this.BState = new State();
 			};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -138,9 +132,7 @@ describe('test-handler-state', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.super = function (target) {
-				target.handleException(CheckState);
-			};
+			A.parent = CheckState;
 			A.prototype = new HandlerNode();
 			A.prototype.constructor = A;
 			A.onNativeException = function () {
@@ -150,9 +142,7 @@ describe('test-handler-state', function () {
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
 			B.prototype = new HandlerNode();
 			B.prototype.constructor = B;
@@ -165,9 +155,7 @@ describe('test-handler-state', function () {
 			var BLeaf = function () {
 				this.BState = new State();
 			};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;
@@ -180,44 +168,32 @@ describe('test-handler-state', function () {
 		});
 
 
-		it('Alternate call should maintain state', function (done) {
+		it('alternativeCall call should maintain state', function (done) {
 			stub.nextResult = new SyntaxError();
 
 			var counter = 0;
 
 			var CheckState = function () {};
 			CheckState.flagPriority = false;
-			CheckState.prototype = new HandlerNode();
-			CheckState.prototype.constructor = CheckState;
 			CheckState.onNetworkException = function () {
 				counter++;
-
 				expect(this.BState.value()).to.equal(2);
-
 				if (counter === 2) done();
 			};
 
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.super = function (target) {
-				target.handleException(CheckState);
-			};
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
+			A.parent = CheckState;
 			A.onNativeException = function () {
 				stub.nextResult = new NetworkError();
-				this.ctxt.alternateCall();
+				this.ctxt.alternativeCall();
 			};
 
 			//B Logic
 			var B = function () {};
-			B.super = function (target) {
-				target.handleException(A);
-			};
+			B.parent = A;
 			B.flagPriority = false;
-			B.prototype = new HandlerNode();
-			B.prototype.constructor = B;
 			B.onException = function () {
 				this.BState.increment();
 				this.ctxt.proceed();
@@ -227,9 +203,7 @@ describe('test-handler-state', function () {
 			var BLeaf = function () {
 				this.BState = new State();
 			};
-			BLeaf.super = function (target) {
-				target.handleException(B);
-			};
+			BLeaf.parent = B;
 			BLeaf.flagPriority = false;
 			BLeaf.prototype = new HandlerNode();
 			BLeaf.prototype.constructor = BLeaf;

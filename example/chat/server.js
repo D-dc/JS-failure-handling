@@ -7,7 +7,7 @@ var express = require('express'),
     app = express(),
     ServerRpc = require('../../../RPCT/index.js');
 
-require('../../nodeHandling.js'),
+require('../../lib/nodeHandling.js'),
 require('./generated/genServerNodes.js'),
 require('./error.js');
 
@@ -24,7 +24,7 @@ app.use('/generated', express.static(__dirname + '/../../'));
 
 var options = {
     pingTimeout: 8000,
-    pingInterval: 6000,
+    pingInterval: 2500,
     defaultRpcTimeout: Infinity
 };
 

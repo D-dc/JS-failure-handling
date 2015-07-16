@@ -30,17 +30,13 @@ describe('tests', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				done(new Error('should not invoke onException method.'));
 			};
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -62,8 +58,6 @@ describe('tests', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				invoked = true;
 				this.ctxt.proceed();
@@ -71,9 +65,7 @@ describe('tests', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -100,8 +92,6 @@ describe('tests', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				invoked = true;
 				this.ctxt.proceed();
@@ -109,9 +99,7 @@ describe('tests', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -134,8 +122,6 @@ describe('tests', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onNetworkException = function () {
 				invoked = true;
 				this.ctxt.proceed();
@@ -146,9 +132,7 @@ describe('tests', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -171,8 +155,6 @@ describe('tests', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onException = function () {
 				invoked = true;
 				this.ctxt.proceed();
@@ -180,9 +162,7 @@ describe('tests', function () {
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -203,17 +183,13 @@ describe('tests', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 			A.onNativeException = function () {
 				done(new Error('should not invoke'));
 			};
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
@@ -235,14 +211,10 @@ describe('tests', function () {
 			//A Logic
 			var A = function () {};
 			A.flagPriority = false;
-			A.prototype = new HandlerNode();
-			A.prototype.constructor = A;
 
 			//ALeaf state
 			var ALeaf = function () {};
-			ALeaf.super = function (target) {
-				target.handleException(A);
-			};
+			ALeaf.parent = A;
 			ALeaf.flagPriority = false;
 			ALeaf.prototype = new HandlerNode();
 			ALeaf.prototype.constructor = ALeaf;
