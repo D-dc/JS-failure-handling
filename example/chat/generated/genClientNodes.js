@@ -45,9 +45,9 @@ CNode2.toString = function () {
 
 CNode2.onNetworkException = function () {
     var buffer = this.buffer,
-        timeout = this.bufferTime;
+        due = this.due;
 
-    buffer.bufferCall(this.ctxt, timeout);
+    buffer.bufferCall(this.ctxt, due);
 };
 
 
@@ -145,7 +145,8 @@ var CLeafA = function () {
     this.buffer = UniqueBuffer.getInstance(); //! from CNode1
     //put here state from ALL its prototypes!
 
-    this.bufferTime = 60000
+    this.due = 60000;
+    this.times = 5;
 };
 CLeafA.parent = CNode3;
 CLeafA.prototype = new HandlerNode();
@@ -167,7 +168,8 @@ var CLeafB = function () {
     this.buffer = UniqueBuffer.getInstance(); //! from CNode1
     //put here state from ALL its prototypes!
 
-    this.bufferTime = 60000
+    this.due = 60000;
+    this.times = 5;
 };
 CLeafB.parent = CNode5;
 CLeafB.prototype = new HandlerNode();
