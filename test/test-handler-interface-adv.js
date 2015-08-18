@@ -37,6 +37,7 @@ describe('Test call object interface (multiple handlers)', function () {
 
 		it('exception translation: should be able to pass along different result and exception', function (done) {
 			stub.nextResult = new Error();
+			var otherError = "custom error";
 
 			//A Logic
 			var A = function () {};
@@ -56,7 +57,7 @@ describe('Test call object interface (multiple handlers)', function () {
 				expect(this.ctxt.callError).to.eql(stub.nextResult);
 
 				//change outcome here
-				this.ctxt.callError = new NetworkError();
+				this.ctxt.callError = otherError
 				this.ctxt.callResult = true;
 				this.ctxt.proceed();
 			};
@@ -72,7 +73,7 @@ describe('Test call object interface (multiple handlers)', function () {
 
 			BProxy.rpc('name', 1, 2, function (err, res) {
 				expect(err).not.to.equal(stub.nextResult);
-				expect(err).to.be.instanceof(NetworkError);
+				expect(err).to.equal(otherError);
 				expect(res).to.equal(true);
 				done();
 			});

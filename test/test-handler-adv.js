@@ -27,7 +27,7 @@ describe('tests', function () {
 
 
         it('should invoke onException method', function (done) {
-            stub.nextResult = new Error();
+            stub.nextResult = "custom error";
 
             counter = 0;
 
@@ -67,14 +67,14 @@ describe('tests', function () {
 
 
         it('should invoke specific method', function (done) {
-            stub.nextResult = new NetworkError();
+            stub.nextResult = "custom error";
 
             counter = 0;
 
             //A Logic
             var A = function () {};
             A.flagPriority = false;
-            A.onNetworkException = function () {
+            A.onApplicationException = function () {
                 counter++;
                 this.ctxt.proceed();
             };
@@ -86,7 +86,7 @@ describe('tests', function () {
             var B = function () {};
             B.parent = A;
             B.flagPriority = false;
-            B.onNetworkException = function () {
+            B.onApplicationException = function () {
                 counter++;
                 this.ctxt.proceed();
             };
@@ -113,14 +113,14 @@ describe('tests', function () {
 
 
         it('should invoke specific method', function (done) {
-            stub.nextResult = new NetworkError();
+            stub.nextResult = "custom error";
 
             counter = 0;
 
             //A Logic
             var A = function () {};
             A.flagPriority = false;
-            A.onNetworkException = function () {
+            A.onApplicationException = function () {
                 counter++;
                 this.ctxt.proceed();
             };
@@ -156,7 +156,7 @@ describe('tests', function () {
 
 
         it('should skip handler if no handling method present', function (done) {
-            stub.nextResult = new NetworkError();
+            stub.nextResult = "custom error";
 
             //A Logic
             var A = function () {};
